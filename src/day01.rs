@@ -1,10 +1,9 @@
-extern crate test;
-
 type IsDigitFun = fn(&[u8], usize) -> Option<i32>;
 
-pub fn solve() -> (i32, i32) {
-    include_bytes!("../inputs/input01.txt")
-        .split(|&b| b == b'\n')
+pub fn solve(input: &str) -> (i32, i32) {
+    input
+        .lines()
+        .map(|line| line.as_bytes())
         .filter(|s| s.len() > 0)
         .fold((0, 0), |(p1, p2), line| {
             (
@@ -59,16 +58,5 @@ fn is_digit2(line: &[u8], i: usize) -> Option<i32> {
                 None
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_solve(b: &mut Bencher) {
-        b.iter(|| solve());
     }
 }

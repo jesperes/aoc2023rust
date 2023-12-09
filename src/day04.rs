@@ -43,8 +43,7 @@ fn process(contents: &str) -> u32 {
     instances.values().sum::<u32>() + total_cards
 }
 
-pub fn solve() -> (i32, i32) {
-    let s = String::from_utf8_lossy(include_bytes!("../inputs/input04.txt"));
-    process(&s);
+pub fn solve(input: &str) -> (i32, i32) {
+    process(input);
     (0, 0)
 }

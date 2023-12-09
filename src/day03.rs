@@ -1,14 +1,12 @@
 use itertools::{self, Itertools};
 use std::collections::{HashMap, HashSet};
 
-extern crate test;
-
 fn is_digit(c: &u8) -> bool {
     *c >= b'0' && *c <= b'9'
 }
 
-pub fn solve() -> (i32, i32) {
-    let bytes = include_bytes!("../inputs/input03.txt");
+pub fn solve(input: &str) -> (i32, i32) {
+    let bytes = input.as_bytes();
     let w: i32 = bytes.iter().position(|&c| c == b'\n').unwrap() as i32 + 1; // include newline
 
     let mut map: HashMap<(usize, char), HashSet<(usize, i32)>> = HashMap::new();
@@ -92,15 +90,4 @@ pub fn solve() -> (i32, i32) {
         });
 
     (p1, p2)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_solve(b: &mut Bencher) {
-        b.iter(|| assert_eq!((527369, 73074886), solve()))
-    }
 }

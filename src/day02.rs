@@ -1,5 +1,3 @@
-extern crate test;
-
 use itertools::Itertools;
 use lazy_regex::regex;
 
@@ -7,9 +5,9 @@ const RED: i32 = 12;
 const GREEN: i32 = 13;
 const BLUE: i32 = 14;
 
-pub fn solve() -> (i32, i32) {
+pub fn solve(input: &str) -> (i32, i32) {
     // A bit for fun, solve both p1 and p2 in a single statement
-    String::from_utf8_lossy(include_bytes!("../inputs/input02.txt"))
+    input
         .split("\n")
         .filter(|s| s.len() > 0)
         .fold((0, 0), |(p1, p2), line| {
@@ -49,15 +47,4 @@ pub fn solve() -> (i32, i32) {
 
             (p1 + game_id.unwrap_or(0), r * g * b + p2)
         })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_solve(b: &mut Bencher) {
-        b.iter(|| assert_eq!((2061, 72596), solve()))
-    }
 }
