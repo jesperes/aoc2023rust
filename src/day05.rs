@@ -155,7 +155,6 @@ pub fn part_2(input: &str) -> i64 {
     curr_ranges.iter().map(|range| range.from).min().unwrap()
 }
 
-pub fn solve() -> (i64, i64) {
-    let input = String::from_utf8_lossy(include_bytes!("../inputs/input05.txt"));
+pub fn solve(input: &str) -> (i64, i64) {
     (part_1(&input), part_2(&input))
 }

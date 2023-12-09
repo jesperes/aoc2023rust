@@ -41,28 +41,23 @@ fn main() {
 }
 
 fn run_puzzle(day: i32, input: &str, sol: &Solution) {
-    let result = match day {
+    match day {
         1 => do_run_puzzle(day, input, sol, &day01::solve),
         2 => do_run_puzzle(day, input, sol, &day02::solve),
         3 => do_run_puzzle(day, input, sol, &day03::solve),
         4 => do_run_puzzle(day, input, sol, &day04::solve),
-        _ => Err(format!("Day {day} not implemented yet")),
-    };
-
-    match result {
-        Ok((p1, p2)) => println!("Day {day}: {:?} {:?}", p1, p2),
-        Err(reason) => println!("{}", reason),
+        5 => do_run_puzzle(day, input, sol, &day05::solve),
+        8 => do_run_puzzle(day, input, sol, &day08::solve),
+        9 => do_run_puzzle(day, input, sol, &day09::solve),
+        _ => {
+            println!("\u{2754} Day {day}: not implemented")
+        }
     }
 }
 
 // See https://github.com/rust-lang/rust/issues/43262 for an explanation of why
 // the <T1 as std::str::FromStr>::Err: std::fmt::Debug thing is necessary.
-fn do_run_puzzle<T1, T2>(
-    day: i32,
-    input: &str,
-    sol: &Solution,
-    f: &dyn Fn(&str) -> (T1, T2),
-) -> Result<(T1, T2), String>
+fn do_run_puzzle<T1, T2>(day: i32, input: &str, sol: &Solution, f: &dyn Fn(&str) -> (T1, T2))
 where
     T1: std::fmt::Debug + PartialEq + std::str::FromStr,
     <T1 as std::str::FromStr>::Err: std::fmt::Debug,
@@ -75,12 +70,12 @@ where
         sol.part2.parse::<T2>().unwrap(),
     );
 
-    if actual != expected {
-        return Err(format!(
-            "Wrong answer for {day} part 1, expected {:?}, got {:?}",
-            expected, actual
-        ));
+    if actual == expected {
+        println!("\u{2705} Day {day}: {:?}", actual);
     } else {
-        return Ok(actual);
+        println!(
+            "\u{274c} Wrong answer for {day}, expected {:?}, got {:?}",
+            expected, actual
+        );
     }
 }

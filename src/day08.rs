@@ -5,12 +5,7 @@ use itertools::{
 };
 use std::collections::HashMap;
 
-pub fn solve() -> (i64, i64) {
-    let input = String::from_utf8_lossy(include_bytes!("../inputs/input08.txt"));
-    do_solve(input.to_string())
-}
-
-fn do_solve(input: String) -> (i64, i64) {
+pub fn solve(input: &str) -> (i64, i64) {
     let (line1, rest) = input.split_once('\n').unwrap();
 
     let dirs = line1.as_bytes();
@@ -73,15 +68,4 @@ fn solve_p2(map: &HashMap<&str, (&str, &str)>, dirs: &[u8]) -> i64 {
             count
         })
         .fold(1, |a, b| num::integer::lcm(a, b))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_solve(b: &mut Bencher) {
-        b.iter(|| assert_eq!((17873, 15746133679061), solve()))
-    }
 }

@@ -2,8 +2,8 @@ extern crate test;
 
 use itertools::Itertools;
 
-pub fn solve() -> (i64, i64) {
-    let input = include_str!("../inputs/input09.txt")
+pub fn solve(input: &str) -> (i64, i64) {
+    let input = input
         .lines()
         .map(|line| {
             line.split_ascii_whitespace()
@@ -44,15 +44,4 @@ fn next_seq(sequence: &Vec<i64>) -> Vec<i64> {
         .tuple_windows()
         .map(|(a, b)| b - a)
         .collect_vec()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_solve(b: &mut Bencher) {
-        b.iter(|| assert_eq!((1972648895, 919), solve()))
-    }
 }
