@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
+use std::time::Duration;
 
 extern crate lazy_static;
 
@@ -50,7 +51,7 @@ fn run_puzzle(day: i32, input: &str, sol: &Solution) {
         8 => do_run_puzzle(day, input, sol, &day08::solve),
         9 => do_run_puzzle(day, input, sol, &day09::solve),
         _ => {
-            println!("\u{2754} Day {day}: not implemented")
+            println!("\u{2754} Day {day}: not implemented");
         }
     }
 }
@@ -64,18 +65,39 @@ where
     T2: std::fmt::Debug + PartialEq + FromStr,
     <T2 as std::str::FromStr>::Err: std::fmt::Debug,
 {
-    let actual = f(input);
+    let (time, actual) = benchmark::<(T1, T2)>(&(|| f(input)));
     let expected = (
         sol.part1.parse::<T1>().unwrap(),
         sol.part2.parse::<T2>().unwrap(),
     );
 
     if actual == expected {
-        println!("\u{2705} Day {day}: {:?}", actual);
+        let micros = time.as_micros();
+        println!("\u{2705} Day {day}: {:10?} \u{b5}s {:?}", micros, actual);
     } else {
         println!(
             "\u{274c} Wrong answer for {day}, expected {:?}, got {:?}",
             expected, actual
         );
     }
+}
+
+fn benchmark<T>(f: &dyn Fn() -> T) -> (Duration, T) {
+    let start = std::time::Instant::now();
+    let max_iter = 100;
+    let max_secs = 3;
+    let mut result;
+    let mut iters = 0;
+
+    loop {
+        result = f();
+        iters += 1;
+        if iters >= max_iter || start.elapsed().as_secs() > max_secs {
+            break;
+        }
+    }
+
+    let elapsed_per_iter = (start.elapsed().as_nanos() / iters) as u64;
+    let duration_per_iter = Duration::from_nanos(elapsed_per_iter);
+    (duration_per_iter, result)
 }
