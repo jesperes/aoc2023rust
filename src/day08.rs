@@ -1,8 +1,8 @@
+use hashbrown::HashMap;
 use itertools::{
     FoldWhile::{Continue, Done},
     Itertools,
 };
-use std::collections::HashMap;
 
 pub fn solve(input: &str) -> (i64, i64) {
     let (line1, rest) = input.split_once('\n').unwrap();

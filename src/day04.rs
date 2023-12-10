@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
 
 fn process(contents: &str) -> u32 {
     let mut instances: HashMap<u32, u32> = HashMap::new();

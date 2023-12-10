@@ -1,4 +1,5 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
+
 type RowCol = (i32, i32);
 
 pub fn solve(input: &str) -> (i32, i32) {
@@ -64,11 +65,11 @@ fn solve_p1(start: &RowCol, map: &HashMap<RowCol, char>) -> (i32, HashSet<RowCol
 
 fn solve_p2(start: &RowCol, limits: &(i32, i32), mainloop: &HashSet<RowCol>) -> i32 {
     let mut outer = HashSet::new();
-    let mut edge = BTreeSet::new();
+    let mut edge = Vec::new();
     let (maxrow, maxcol) = limits;
-    edge.insert(*start);
+    edge.push(*start);
 
-    while let Some(node) = edge.pop_first() {
+    while let Some(node) = edge.pop() {
         let (row, col) = node;
         if mainloop.contains(&node)
             || (row < 0 || row > *maxrow || col < 0 || col > *maxcol)
@@ -79,10 +80,10 @@ fn solve_p2(start: &RowCol, limits: &(i32, i32), mainloop: &HashSet<RowCol>) -> 
 
         outer.insert(node);
 
-        edge.insert((row - 1, col));
-        edge.insert((row + 1, col));
-        edge.insert((row, col - 1));
-        edge.insert((row, col + 1));
+        edge.push((row - 1, col));
+        edge.push((row + 1, col));
+        edge.push((row, col - 1));
+        edge.push((row, col + 1));
     }
 
     // Note that we cannot just compute the number of "inner" nodes by

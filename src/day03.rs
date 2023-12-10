@@ -1,5 +1,5 @@
+use hashbrown::{HashMap, HashSet};
 use itertools::{self, Itertools};
-use std::collections::{HashMap, HashSet};
 
 fn is_digit(c: &u8) -> bool {
     *c >= b'0' && *c <= b'9'
