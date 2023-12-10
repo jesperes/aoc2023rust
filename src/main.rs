@@ -18,6 +18,7 @@ mod day04;
 mod day05;
 mod day08;
 mod day09;
+mod day10;
 
 fn main() {
     let cookie = get_cookie();
@@ -50,7 +51,7 @@ fn maybe_fetch_puzzle_data(year: u32, day: u32, cookie: &String) -> String {
         Ok(false) => {
             let url = format!("https://adventofcode.com/{year}/day/{day}/input");
             let cookieheader = format!("session={cookie}");
-            println!("Fetching input data for {year} day {day}");
+            println!("\u{1f385} Fetching input data for {year} day {day}");
             let contents = reqwest::blocking::Client::new()
                 .get(url)
                 .header(header::COOKIE, cookieheader.trim())
@@ -81,7 +82,7 @@ fn maybe_fetch_puzzle_solutions(
         Ok(false) => {
             let url = format!("https://adventofcode.com/{year}/day/{day}");
             let cookieheader = format!("session={cookie}");
-            println!("Fetching puzzle description for {year} day {day}");
+            println!("\u{1f385} (Re)downloading puzzle description");
             let contents = reqwest::blocking::Client::new()
                 .get(url)
                 .header(header::COOKIE, cookieheader.trim())
@@ -120,6 +121,7 @@ fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
         5 => do_run_puzzle(day, input, sol, &day05::solve),
         8 => do_run_puzzle(day, input, sol, &day08::solve),
         9 => do_run_puzzle(day, input, sol, &day09::solve),
+        10 => do_run_puzzle(day, input, sol, &day10::solve),
         _ => {
             println!("Day {day}: \u{2754}");
         }
@@ -151,7 +153,7 @@ fn do_run_puzzle<T1, T2>(
     let col_micros = format!("{micros} \u{b5}s");
 
     println!(
-        "{:-10} {:20} {:40} {:40}",
+        "{:-10} {:10} {:40} {:40}",
         col_day, col_micros, p1_text, p2_text
     );
 }
@@ -177,14 +179,14 @@ where
     } else {
         // This means that we were unable to find any submitted solution in
         // the puzzle description text.
-        format!("\u{2754} {p}:{:?} {}", actual, "submit_this".green())
+        format!("\u{2754} {p} = {:?} {}", actual, "submit?".yellow().bold())
     }
     .to_string()
 }
 
 fn benchmark<T>(f: &dyn Fn() -> T) -> (Duration, T) {
     let start = std::time::Instant::now();
-    let max_iter = 100;
+    let max_iter = 1;
     let max_secs = 3;
     let mut result;
     let mut iters = 0;
