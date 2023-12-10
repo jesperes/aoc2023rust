@@ -85,6 +85,9 @@ fn solve_p2(start: &RowCol, limits: &(i32, i32), mainloop: &HashSet<RowCol>) -> 
         edge.insert((row, col + 1));
     }
 
+    // Note that we cannot just compute the number of "inner" nodes by
+    // using total - (outer + mainloop), since we need to count only
+    // "even" inner nodes.
     let mut inner = 0;
     for row in (0..=*maxrow).step_by(2) {
         for col in (0..=*maxcol).step_by(2) {
