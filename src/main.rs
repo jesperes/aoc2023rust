@@ -1,5 +1,3 @@
-#![feature(test)]
-
 use chrono::prelude::*;
 use chrono::Datelike;
 use chrono::Local;
@@ -108,8 +106,8 @@ fn maybe_fetch_puzzle_solutions(
 }
 
 fn get_cookie() -> String {
-    let cookiefile = dirs::home_dir().unwrap().join(".adventofcode.session");
-    fs::read_to_string(cookiefile).expect("Could not find cookie file")
+    fs::read_to_string(dirs::home_dir().unwrap().join(".adventofcode.session"))
+        .expect("Could not find cookiefile")
 }
 
 fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
@@ -186,7 +184,7 @@ where
 
 fn benchmark<T>(f: &dyn Fn() -> T) -> (Duration, T) {
     let start = std::time::Instant::now();
-    let max_iter = 1;
+    let max_iter = 100;
     let max_secs = 3;
     let mut result;
     let mut iters = 0;

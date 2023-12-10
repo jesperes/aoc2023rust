@@ -1,4 +1,3 @@
-extern crate test;
 use itertools::{
     FoldWhile::{Continue, Done},
     Itertools,

@@ -1,5 +1,3 @@
-extern crate test;
-
 use itertools::Itertools;
 
 pub fn solve(input: &str) -> (i64, i64) {
