@@ -1,12 +1,8 @@
-use chrono::prelude::*;
-use chrono::Datelike;
-use chrono::Local;
+use chrono::{prelude::*, Datelike, Local};
 use chrono_tz::US::Eastern;
 use colored::Colorize;
 use reqwest::header;
-use std::fs;
-use std::str::FromStr;
-use std::time::Duration;
+use std::{fs, str::FromStr, time::Duration};
 extern crate lazy_static;
 
 mod day01;
@@ -17,6 +13,24 @@ mod day05;
 mod day08;
 mod day09;
 mod day10;
+mod day11;
+
+fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
+    match day {
+        1 => do_run_puzzle(day, input, sol, &day01::solve),
+        2 => do_run_puzzle(day, input, sol, &day02::solve),
+        3 => do_run_puzzle(day, input, sol, &day03::solve),
+        4 => do_run_puzzle(day, input, sol, &day04::solve),
+        5 => do_run_puzzle(day, input, sol, &day05::solve),
+        8 => do_run_puzzle(day, input, sol, &day08::solve),
+        9 => do_run_puzzle(day, input, sol, &day09::solve),
+        10 => do_run_puzzle(day, input, sol, &day10::solve),
+        11 => do_run_puzzle(day, input, sol, &day11::solve),
+        _ => {
+            println!("Day {day}: \u{2754}");
+        }
+    }
+}
 
 fn main() {
     let cookie = get_cookie();
@@ -108,22 +122,6 @@ fn maybe_fetch_puzzle_solutions(
 fn get_cookie() -> String {
     fs::read_to_string(dirs::home_dir().unwrap().join(".adventofcode.session"))
         .expect("Could not find cookiefile")
-}
-
-fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
-    match day {
-        1 => do_run_puzzle(day, input, sol, &day01::solve),
-        2 => do_run_puzzle(day, input, sol, &day02::solve),
-        3 => do_run_puzzle(day, input, sol, &day03::solve),
-        4 => do_run_puzzle(day, input, sol, &day04::solve),
-        5 => do_run_puzzle(day, input, sol, &day05::solve),
-        8 => do_run_puzzle(day, input, sol, &day08::solve),
-        9 => do_run_puzzle(day, input, sol, &day09::solve),
-        10 => do_run_puzzle(day, input, sol, &day10::solve),
-        _ => {
-            println!("Day {day}: \u{2754}");
-        }
-    }
 }
 
 // See https://github.com/rust-lang/rust/issues/43262 for an explanation of why

@@ -1,0 +1,61 @@
+use hashbrown::HashSet;
+use itertools::Itertools;
+
+pub fn solve(input: &str) -> (u64, u64) {
+    // Count how many "galaxies" there are on each row and column.
+    let (rows, cols) = parse(input);
+
+    let p1 = sum_of_galaxy_distances(input, &rows, &cols, 2);
+    let p2 = sum_of_galaxy_distances(input, &rows, &cols, 1_000_000);
+
+    (p1, p2)
+}
+
+fn parse(input: &str) -> (HashSet<usize>, HashSet<usize>) {
+    let mut rows = HashSet::new();
+    let mut cols = HashSet::new();
+    for (row, line) in input.lines().enumerate() {
+        for (col, char) in line.chars().enumerate() {
+            if char == '#' {
+                rows.insert(row);
+                cols.insert(col);
+            }
+        }
+    }
+    (rows, cols)
+}
+
+fn sum_of_galaxy_distances(
+    input: &str,
+    rows: &HashSet<usize>,
+    cols: &HashSet<usize>,
+    multiplier: i64,
+) -> u64 {
+    let mut galaxies: HashSet<(i64, i64)> = HashSet::new();
+    let mut row_offset: i64 = 0;
+
+    for (row, line) in input.lines().enumerate() {
+        let mut col_offset: i64 = 0;
+
+        if !rows.contains(&row) {
+            row_offset += multiplier - 1;
+        }
+
+        for (col, char) in line.chars().enumerate() {
+            if !cols.contains(&col) {
+                col_offset += multiplier - 1;
+            }
+
+            if char == '#' {
+                galaxies.insert((row as i64 + row_offset, col as i64 + col_offset));
+            }
+        }
+    }
+
+    galaxies
+        .iter()
+        .cartesian_product(&galaxies)
+        .filter(|(p1, p2)| p1 < p2)
+        .map(|((row1, col1), (row2, col2))| row1.abs_diff(*row2) + col1.abs_diff(*col2))
+        .sum::<u64>()
+}
