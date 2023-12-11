@@ -1,7 +1,7 @@
 use hashbrown::HashSet;
 use itertools::Itertools;
 
-pub fn solve(input: &str) -> (u64, u64) {
+pub fn solve(input: &str) -> (usize, usize) {
     // Count how many "galaxies" there are on each row and column.
     let (rows, cols) = parse(input);
 
@@ -29,13 +29,13 @@ fn sum_of_galaxy_distances(
     input: &str,
     rows: &HashSet<usize>,
     cols: &HashSet<usize>,
-    multiplier: i64,
-) -> u64 {
-    let mut galaxies: HashSet<(i64, i64)> = HashSet::new();
-    let mut row_offset: i64 = 0;
+    multiplier: usize,
+) -> usize {
+    let mut galaxies = HashSet::new();
+    let mut row_offset = 0;
 
     for (row, line) in input.lines().enumerate() {
-        let mut col_offset: i64 = 0;
+        let mut col_offset = 0;
 
         if !rows.contains(&row) {
             row_offset += multiplier - 1;
@@ -47,7 +47,7 @@ fn sum_of_galaxy_distances(
             }
 
             if char == '#' {
-                galaxies.insert((row as i64 + row_offset, col as i64 + col_offset));
+                galaxies.insert((row + row_offset, col + col_offset));
             }
         }
     }
@@ -57,5 +57,5 @@ fn sum_of_galaxy_distances(
         .cartesian_product(&galaxies)
         .filter(|(p1, p2)| p1 < p2)
         .map(|((row1, col1), (row2, col2))| row1.abs_diff(*row2) + col1.abs_diff(*col2))
-        .sum::<u64>()
+        .sum()
 }
