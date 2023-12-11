@@ -1,49 +1,33 @@
 use hashbrown::{HashMap, HashSet};
-
-fn process(contents: &str) -> u32 {
-    let mut instances: HashMap<u32, u32> = HashMap::new();
-    let total_cards = contents.lines().count() as u32;
-    for line in contents.lines() {
-        if let Some((card_part, rest)) = line.split_once(':') {
-            let card = card_part
-                .split_whitespace()
-                .nth(1)
-                .unwrap()
-                .parse::<u32>()
-                .unwrap();
-            if let Some((winning_str, hand_str)) = rest.split_once('|') {
-                let winning = winning_str
-                    .split_whitespace()
-                    .map(|n| n.parse::<u32>().unwrap())
-                    .collect::<HashSet<u32>>();
-                let hand = hand_str
-                    .split_whitespace()
-                    .map(|n| n.parse::<u32>().unwrap())
-                    .collect::<HashSet<u32>>();
-                let count = winning.intersection(&hand).count() as u32;
-
-                for i in (card + 1)..(card + count + 1) {
-                    let mut copies = 0;
-                    copies += if instances.contains_key(&i) {
-                        instances.get(&i).unwrap()
-                    } else {
-                        &0
-                    };
-                    copies += 1;
-                    copies += if instances.contains_key(&card) {
-                        instances.get(&card).unwrap()
-                    } else {
-                        &0
-                    };
-                    instances.insert(i, copies);
-                }
-            }
-        }
-    }
-    instances.values().sum::<u32>() + total_cards
-}
+use std::convert::identity;
 
 pub fn solve(input: &str) -> (i32, i32) {
-    process(input);
-    (0, 0)
+    let mut map: HashMap<i32, i32> = HashMap::new();
+
+    let (num_cards, sum) = input
+        .lines()
+        .into_iter()
+        .map(|line| line.split_once(':'))
+        .filter_map(identity)
+        .fold((0, 0), |(n, sum), (left, right)| {
+            let card_num = left[4..].trim().parse::<i32>().unwrap();
+            let (s1, s2) = right.split_once('|').unwrap();
+            let num_matching = split_nums(s1).intersection(&split_nums(s2)).count() as i32;
+
+            for i in (card_num + 1)..=(card_num + num_matching) {
+                *map.entry(i).or_insert(0) += map.get(&card_num).unwrap_or(&0) + 1;
+            }
+
+            (n + 1, sum + (1 << (num_matching - 1)))
+        });
+
+    (sum, map.values().sum::<i32>() + num_cards)
+}
+
+fn split_nums(s: &str) -> HashSet<i32> {
+    s.split(' ')
+        .map(|s| s.trim())
+        .filter(|s| s.len() > 0)
+        .map(|s| s.parse().unwrap())
+        .collect()
 }
