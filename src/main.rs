@@ -10,6 +10,7 @@ mod day02;
 mod day03;
 mod day04;
 mod day05;
+mod day06;
 mod day08;
 mod day09;
 mod day10;
@@ -22,6 +23,7 @@ fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
         3 => do_run_puzzle(day, input, sol, &day03::solve),
         4 => do_run_puzzle(day, input, sol, &day04::solve),
         5 => do_run_puzzle(day, input, sol, &day05::solve),
+        6 => do_run_puzzle(day, input, sol, &day06::solve),
         8 => do_run_puzzle(day, input, sol, &day08::solve),
         9 => do_run_puzzle(day, input, sol, &day09::solve),
         10 => do_run_puzzle(day, input, sol, &day10::solve),
@@ -182,15 +184,15 @@ where
 
 fn benchmark<T>(f: &dyn Fn() -> T) -> (Duration, T) {
     let start = std::time::Instant::now();
-    let max_iter = 100;
-    let max_secs = 3;
+    let max_iter = 1;
+    let max_ms = 1;
     let mut result;
     let mut iters = 0;
 
     loop {
         result = f();
         iters += 1;
-        if iters >= max_iter || start.elapsed().as_secs() > max_secs {
+        if iters >= max_iter || start.elapsed().as_millis() > max_ms {
             break;
         }
     }
