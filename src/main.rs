@@ -140,7 +140,14 @@ fn do_run_puzzle<T1, T2>(
     <T2 as std::str::FromStr>::Err: std::fmt::Debug,
 {
     let (time, actual) = benchmark::<(T1, T2)>(&(|| f(input)));
+
     let micros = time.as_micros();
+    let (duration, unit) = if micros <= 10 {
+        (time.as_nanos(), "ns")
+    } else {
+        (micros, "\u{b5}s")
+    };
+
     let (expected_p1_sol, expected_p2_sol) = sol;
     let (actual_p1_sol, actual_p2_sol) = actual;
 
@@ -148,7 +155,7 @@ fn do_run_puzzle<T1, T2>(
     let p2_text = gen_sol_text("part 2", expected_p2_sol, &actual_p2_sol);
 
     let col_day = format!("Day {day}:");
-    let col_micros = format!("{micros} \u{b5}s");
+    let col_micros = format!("{duration} {unit}");
 
     println!(
         "{:-10} {:10} {:40} {:40}",
