@@ -18,7 +18,14 @@ pub fn solve(input: &str) -> (i32, i32) {
                 *map.entry(i).or_insert(0) += map.get(&card_num).unwrap_or(&0) + 1;
             }
 
-            (n + 1, sum + (1 << (num_matching - 1)))
+            let sum0 = sum
+                + if num_matching <= 0 {
+                    0
+                } else {
+                    1 << (num_matching - 1)
+                };
+
+            (n + 1, sum0)
         });
 
     (sum, map.values().sum::<i32>() + num_cards)
