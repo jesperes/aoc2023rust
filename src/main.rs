@@ -15,6 +15,7 @@ mod day08;
 mod day09;
 mod day10;
 mod day11;
+mod day12;
 
 fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
     match day {
@@ -28,6 +29,7 @@ fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
         9 => do_run_puzzle(day, input, sol, &day09::solve),
         10 => do_run_puzzle(day, input, sol, &day10::solve),
         11 => do_run_puzzle(day, input, sol, &day11::solve),
+        12 => do_run_puzzle(day, input, sol, &day12::solve),
         _ => {
             println!("Day {day}: \u{2754}");
         }
