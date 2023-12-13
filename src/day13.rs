@@ -1,7 +1,7 @@
 // Represent the mirror as a vector of ints
 type MirrorBits = Vec<u32>;
 
-// Return true/false if
+// Detect reflections with exactly 'smudges' number of incorrect bits.
 fn mirrors(ns: &MirrorBits, i: usize, smudges: u32) -> bool {
     (0..i)
         .rev()
@@ -11,7 +11,7 @@ fn mirrors(ns: &MirrorBits, i: usize, smudges: u32) -> bool {
         == smudges
 }
 
-fn summarize(grid: &str, flex: u32) -> usize {
+fn summarize(grid: &str, smudges: u32) -> usize {
     let mut rows = MirrorBits::new();
     let mut cols = MirrorBits::new();
 
@@ -25,19 +25,21 @@ fn summarize(grid: &str, flex: u32) -> usize {
         rows.push(row);
     }
 
-    for c in 1..cols.len() {
-        if mirrors(&cols, c, flex) {
-            return c;
-        }
-    }
-
-    for r in 1..rows.len() {
-        if mirrors(&rows, r, flex) {
-            return 100 * r;
-        }
-    }
-
-    unreachable!();
+    (1..cols.len())
+        // has vertical reflection?
+        .filter(|c| mirrors(&cols, *c, smudges))
+        .next()
+        .or_else(|| {
+            // if not, check horizontal reflection and multiply by 100
+            Some(
+                (1..rows.len())
+                    .filter(|r| mirrors(&rows, *r, smudges))
+                    .next()
+                    .unwrap_or(0)
+                    * 100,
+            )
+        })
+        .unwrap()
 }
 
 pub fn solve(input: &str) -> (usize, usize) {

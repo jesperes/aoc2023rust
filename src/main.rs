@@ -195,8 +195,8 @@ where
 
 fn benchmark<T>(f: &dyn Fn() -> T) -> (Duration, T) {
     let start = std::time::Instant::now();
-    let max_iter = 1;
-    let max_ms = 1;
+    let max_iter = 100;
+    let max_ms = 5;
     let mut result;
     let mut iters = 0;
 
