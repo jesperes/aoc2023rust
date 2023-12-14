@@ -63,17 +63,16 @@ fn tilt(platform: &mut Platform, dir: Direction) {
 }
 
 fn get_load(platform: &Platform) -> usize {
-    let rows = platform.rows();
-    let cols = platform.cols();
-    let mut load = 0;
-    for row in 0..rows {
-        for col in 0..cols {
-            if platform[(row, col)] == 'O' {
-                load += rows - row;
+    platform
+        .indexed_iter()
+        .filter_map(|((row, _), c)| {
+            if *c == 'O' {
+                Some(platform.rows() - row)
+            } else {
+                None
             }
-        }
-    }
-    return load;
+        })
+        .sum()
 }
 
 fn get_key(platform: &Platform) -> String {
