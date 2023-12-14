@@ -1,5 +1,5 @@
 use grid::Grid;
-use hashbrown::HashSet;
+use hashbrown::HashMap;
 
 type Platform = Grid<char>;
 enum Direction {
@@ -17,7 +17,7 @@ fn can_move_to(platform: &Platform, row: i32, col: i32) -> bool {
         && platform[(row as usize, col as usize)] == '.'
 }
 
-fn tilt(platform: &mut Platform, dir: Direction, _cache: &mut HashSet<Platform>) {
+fn tilt(platform: &mut Platform, dir: Direction) {
     let rows = platform.rows();
     let cols = platform.cols();
     for row in 0..rows {
@@ -76,8 +76,20 @@ fn get_load(platform: &Platform) -> usize {
     return load;
 }
 
-pub fn solve(input: &str) -> (usize, i64) {
-    let mut cache = HashSet::new();
+fn get_key(platform: &Platform) -> String {
+    let rows = platform.rows();
+    let cols = platform.cols();
+    let mut key = String::new();
+    for row in 0..rows {
+        for col in 0..cols {
+            key.push(platform[(row, col)]);
+        }
+    }
+    key
+}
+
+pub fn solve(input: &str) -> (usize, usize) {
+    let mut cache: HashMap<String, i32> = HashMap::new();
     let rows = input.lines().count();
     let cols = input.lines().next().unwrap().len();
     let mut platform = Platform::new(rows, cols);
@@ -89,30 +101,41 @@ pub fn solve(input: &str) -> (usize, i64) {
     }
 
     let mut p1: Option<usize> = None;
-    let start = std::time::Instant::now();
-    for cycle in 0..1_000_000_000 {
-        tilt(&mut platform, Direction::North, &mut cache);
+    let p2;
+    let mut total_cycles = 1_000_000_000;
+    let mut cycle = 1;
+    let mut enable_caching = true;
+    loop {
+        tilt(&mut platform, Direction::North);
         // store p1 on the first round
         p1.get_or_insert_with(|| get_load(&platform));
-        tilt(&mut platform, Direction::West, &mut cache);
-        tilt(&mut platform, Direction::South, &mut cache);
-        tilt(&mut platform, Direction::East, &mut cache);
+        tilt(&mut platform, Direction::West);
+        tilt(&mut platform, Direction::South);
+        tilt(&mut platform, Direction::East);
 
-        if cycle % 1000 == 0 {
-            let elapsed = start.elapsed();
-            let ns_per_cycle = elapsed.as_nanos() / (cycle + 1);
-            let remaining_cycles = 1_000_000_000 - (cycle + 1);
-            let remaining_ns = remaining_cycles * ns_per_cycle;
-            let proj_hours = (remaining_ns as f64 / 1_000_000_000f64) / 3600f64;
-            println!(
-                "Completed {cycle} cycles in {} ns/cycle, projected time to completion: {:.2} hours",
-                ns_per_cycle, proj_hours
-            );
+        if cycle == total_cycles {
+            p2 = Some(get_load(&platform));
+            break;
         }
+
+        if enable_caching {
+            let key = get_key(&platform);
+            if cache.contains_key(&key) {
+                let period_start = cache.get(&key).unwrap();
+                let period_len = cycle - period_start;
+                let remaining_cycles = total_cycles - cycle;
+                let remaining_whole_periods = remaining_cycles.div_floor(period_len);
+                total_cycles -= remaining_whole_periods * period_len;
+                enable_caching = false;
+            } else {
+                cache.insert(key, cycle);
+            }
+        }
+
+        cycle += 1;
     }
 
-    let p2 = get_load(&platform);
-    (p1.unwrap(), p2 as i64)
+    (p1.unwrap(), p2.unwrap())
 }
 
 #[cfg(test)]

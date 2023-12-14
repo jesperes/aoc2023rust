@@ -1,3 +1,5 @@
+#![feature(int_roundings)]
+
 use chrono::{prelude::*, Datelike, Local};
 use chrono_tz::US::Eastern;
 use colored::Colorize;
