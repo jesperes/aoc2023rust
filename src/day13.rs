@@ -1,7 +1,4 @@
-use rayon::{
-    iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator},
-    str::ParallelString,
-};
+use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
 
 // Represent the mirror as a vector of ints
 type MirrorBits = Vec<u32>;
