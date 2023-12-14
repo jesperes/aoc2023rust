@@ -1,7 +1,9 @@
 use grid::Grid;
 use hashbrown::HashMap;
+use strum::{EnumIter, IntoEnumIterator};
 
 type Platform = Grid<char>;
+#[derive(EnumIter, PartialEq)]
 enum Direction {
     North,
     West,
@@ -17,7 +19,7 @@ fn can_move_to(platform: &Platform, row: i32, col: i32) -> bool {
         && platform[(row as usize, col as usize)] == '.'
 }
 
-fn tilt(platform: &mut Platform, dir: Direction) {
+fn tilt(platform: &mut Platform, dir: &Direction) {
     let rows = platform.rows();
     let cols = platform.cols();
     for row in 0..rows {
@@ -75,20 +77,8 @@ fn get_load(platform: &Platform) -> usize {
         .sum()
 }
 
-fn get_key(platform: &Platform) -> String {
-    let rows = platform.rows();
-    let cols = platform.cols();
-    let mut key = String::new();
-    for row in 0..rows {
-        for col in 0..cols {
-            key.push(platform[(row, col)]);
-        }
-    }
-    key
-}
-
 pub fn solve(input: &str) -> (usize, usize) {
-    let mut cache: HashMap<String, i32> = HashMap::new();
+    let mut cache = HashMap::new();
     let rows = input.lines().count();
     let cols = input.lines().next().unwrap().len();
     let mut platform = Platform::new(rows, cols);
@@ -105,12 +95,13 @@ pub fn solve(input: &str) -> (usize, usize) {
     let mut cycle = 1;
     let mut enable_caching = true;
     loop {
-        tilt(&mut platform, Direction::North);
-        // store p1 on the first round
-        p1.get_or_insert_with(|| get_load(&platform));
-        tilt(&mut platform, Direction::West);
-        tilt(&mut platform, Direction::South);
-        tilt(&mut platform, Direction::East);
+        Direction::iter().for_each(|d| {
+            tilt(&mut platform, &d);
+            if d == Direction::North {
+                // store the first load we find in the north direction as p1 solution
+                p1.get_or_insert_with(|| get_load(&platform));
+            }
+        });
 
         if cycle == total_cycles {
             p2 = Some(get_load(&platform));
@@ -118,11 +109,11 @@ pub fn solve(input: &str) -> (usize, usize) {
         }
 
         if enable_caching {
-            let key = get_key(&platform);
+            let key = platform.clone().into_vec();
             if cache.contains_key(&key) {
                 let period_start = cache.get(&key).unwrap();
                 let period_len = cycle - period_start;
-                let remaining_cycles = total_cycles - cycle;
+                let remaining_cycles: i32 = total_cycles - cycle;
                 let remaining_whole_periods = remaining_cycles.div_floor(period_len);
                 total_cycles -= remaining_whole_periods * period_len;
                 enable_caching = false;
