@@ -4,6 +4,11 @@ use itertools::{
     Itertools,
 };
 
+use rayon::{
+    self,
+    iter::{IntoParallelIterator, ParallelBridge, ParallelIterator},
+};
+
 pub fn solve(input: &str) -> (i64, i64) {
     let (line1, rest) = input.split_once('\n').unwrap();
 
@@ -44,8 +49,9 @@ fn solve_p1(map: &HashMap<&str, (&str, &str)>, dirs: &[u8]) -> i64 {
 
 fn solve_p2(map: &HashMap<&str, (&str, &str)>, dirs: &[u8]) -> i64 {
     map.keys()
+        .par_bridge()
+        .into_par_iter()
         .filter(|node| node.ends_with('A'))
-        .into_iter()
         .map(|node| {
             let (_, count) = dirs
                 .iter()
@@ -66,5 +72,5 @@ fn solve_p2(map: &HashMap<&str, (&str, &str)>, dirs: &[u8]) -> i64 {
                 .into_inner();
             count
         })
-        .fold(1, |a, b| num::integer::lcm(a, b))
+        .reduce(|| 1, |a, b| num::integer::lcm(a, b))
 }
