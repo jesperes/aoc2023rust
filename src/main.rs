@@ -20,6 +20,7 @@ mod day11;
 mod day12;
 mod day13;
 mod day14;
+mod day15;
 
 fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
     match day {
@@ -36,6 +37,7 @@ fn run_puzzle(day: i32, input: &str, sol: &(Option<String>, Option<String>)) {
         12 => do_run_puzzle(day, input, sol, &day12::solve),
         13 => do_run_puzzle(day, input, sol, &day13::solve),
         14 => do_run_puzzle(day, input, sol, &day14::solve),
+        15 => do_run_puzzle(day, input, sol, &day15::solve),
         _ => {
             println!("Day {day}: \u{2754}");
         }
@@ -199,8 +201,8 @@ where
 
 fn benchmark<T>(f: &dyn Fn() -> T) -> (Duration, T) {
     let start = std::time::Instant::now();
-    let max_iter = 100;
-    let max_ms = 5000;
+    let max_iter = 10;
+    let max_ms = 5;
     let mut result;
     let mut iters = 0;
 

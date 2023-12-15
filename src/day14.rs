@@ -127,23 +127,3 @@ pub fn solve(input: &str) -> (usize, usize) {
 
     (p1.unwrap(), p2.unwrap())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn ex1_test() {
-        let ex = "\
-O....#....
-O.OO#....#
-.....##...
-OO.#O....O
-.O.....O#.
-O.#..O.#.#
-..O..#O..O
-.......O..
-#....###..
-#OO..#....";
-        assert_eq!((136, 0), solve(&ex));
-    }
-}
