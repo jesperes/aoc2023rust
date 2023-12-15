@@ -1,10 +1,18 @@
 use itertools::Itertools;
 
-pub fn solve(input: &str) -> (i64, i64) {
+use crate::Solver;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        solve(input)
+    }
+}
+
+pub fn solve(input: &str) -> (String, String) {
     let (times, dists) = input.split_once('\n').unwrap();
     let p1 = solve_p1(times, dists);
     let p2 = solve_p2(times, dists);
-    (p1, p2)
+    (p1.to_string(), p2.to_string())
 }
 
 fn solve_p1(times: &str, dists: &str) -> i64 {

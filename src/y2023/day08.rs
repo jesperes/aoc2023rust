@@ -9,20 +9,27 @@ use rayon::{
     iter::{IntoParallelIterator, ParallelBridge, ParallelIterator},
 };
 
-pub fn solve(input: &str) -> (i64, i64) {
-    let (line1, rest) = input.split_once('\n').unwrap();
+use crate::Solver;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let (line1, rest) = input.split_once('\n').unwrap();
 
-    let dirs = line1.as_bytes();
-    let mut map: HashMap<&str, (&str, &str)> = HashMap::new();
+        let dirs = line1.as_bytes();
+        let mut map: HashMap<&str, (&str, &str)> = HashMap::new();
 
-    for line in rest.trim().split('\n').collect::<Vec<&str>>() {
-        let from = &line[0..3];
-        let left = &line[7..10];
-        let right = &line[12..15];
-        map.insert(from, (left, right));
+        for line in rest.trim().split('\n').collect::<Vec<&str>>() {
+            let from = &line[0..3];
+            let left = &line[7..10];
+            let right = &line[12..15];
+            map.insert(from, (left, right));
+        }
+
+        (
+            solve_p1(&map, &dirs).to_string(),
+            solve_p2(&map, &dirs).to_string(),
+        )
     }
-
-    (solve_p1(&map, &dirs), solve_p2(&map, &dirs))
 }
 
 fn solve_p1(map: &HashMap<&str, (&str, &str)>, dirs: &[u8]) -> i64 {

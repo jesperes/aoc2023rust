@@ -1,4 +1,14 @@
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let (p1, p2) = solve(input);
+        (p1.to_string(), p2.to_string())
+    }
+}
+
 use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
+
+use crate::Solver;
 
 // Represent the mirror as a vector of ints
 type MirrorBits = Vec<u32>;

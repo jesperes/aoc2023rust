@@ -1,19 +1,23 @@
 use itertools::Itertools;
 
-pub fn solve(input: &str) -> (i64, i64) {
-    let input = input
-        .lines()
-        .map(|line| {
-            line.split_ascii_whitespace()
-                .map(|s| s.parse::<i64>().unwrap())
-                .collect_vec()
-        })
-        .collect_vec();
+use crate::Solver;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let input = input
+            .lines()
+            .map(|line| {
+                line.split_ascii_whitespace()
+                    .map(|s| s.parse::<i64>().unwrap())
+                    .collect_vec()
+            })
+            .collect_vec();
 
-    (
-        do_solve(&input, &predict_next),
-        do_solve(&input, &predict_prev),
-    )
+        (
+            do_solve(&input, &predict_next).to_string(),
+            do_solve(&input, &predict_prev).to_string(),
+        )
+    }
 }
 
 fn do_solve(input: &Vec<Vec<i64>>, next_fun: &dyn Fn(&Vec<i64>) -> i64) -> i64 {

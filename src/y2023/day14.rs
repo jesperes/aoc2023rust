@@ -1,6 +1,16 @@
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let (p1, p2) = solve(input);
+        (p1.to_string(), p2.to_string())
+    }
+}
+
 use grid::Grid;
 use hashbrown::HashMap;
 use strum::{EnumIter, IntoEnumIterator};
+
+use crate::Solver;
 
 type Platform = Grid<char>;
 #[derive(EnumIter, PartialEq)]

@@ -1,4 +1,11 @@
+use crate::Solver;
 use itertools::Itertools;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        solve(input)
+    }
+}
 
 struct Rule {
     destination: i64,
@@ -12,11 +19,11 @@ struct Range {
     to: i64,
 }
 
-pub fn solve(input: &str) -> (i64, i64) {
+pub fn solve(input: &str) -> (String, String) {
     (solve_p1(&input), solve_p2(&input))
 }
 
-pub fn solve_p1(input: &str) -> i64 {
+pub fn solve_p1(input: &str) -> String {
     let (seeds_str, maps_str) = input.split_once("\n\n").unwrap();
     let seeds = seeds_str
         .strip_prefix("seeds: ")
@@ -58,9 +65,10 @@ pub fn solve_p1(input: &str) -> i64 {
         })
         .min()
         .unwrap()
+        .to_string()
 }
 
-pub fn solve_p2(input: &str) -> i64 {
+pub fn solve_p2(input: &str) -> String {
     let (seeds_str, maps_str) = input.split_once("\n\n").unwrap();
     let seeds = seeds_str
         .strip_prefix("seeds: ")
@@ -153,5 +161,10 @@ pub fn solve_p2(input: &str) -> i64 {
         curr_ranges = new_ranges;
     }
 
-    curr_ranges.iter().map(|range| range.from).min().unwrap()
+    curr_ranges
+        .iter()
+        .map(|range| range.from)
+        .min()
+        .unwrap()
+        .to_string()
 }

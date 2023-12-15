@@ -1,4 +1,14 @@
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let (p1, p2) = solve(input);
+        (p1.to_string(), p2.to_string())
+    }
+}
+
 use hashbrown::HashMap;
+
+use crate::Solver;
 
 pub fn solve(input: &str) -> (i32, usize) {
     let p1 = solve_p1(input);

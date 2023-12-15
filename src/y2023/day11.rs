@@ -1,5 +1,14 @@
+use crate::Solver;
 use hashbrown::HashSet;
+
 use itertools::Itertools;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let (p1, p2) = solve(input);
+        (p1.to_string(), p2.to_string())
+    }
+}
 
 pub fn solve(input: &str) -> (usize, usize) {
     // Count how many "galaxies" there are on each row and column.

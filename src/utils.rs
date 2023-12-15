@@ -1,6 +1,6 @@
 use chrono::{Datelike, Local};
 
-use crate::{Day, Year};
+use crate::Year;
 
 pub fn current_year() -> Year {
     let local = Local::now();

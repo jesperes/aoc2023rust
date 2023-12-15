@@ -1,4 +1,12 @@
+use crate::Solver;
 use hashbrown::{HashMap, HashSet};
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        let (p1, p2) = solve(input);
+        (p1.to_string(), p2.to_string())
+    }
+}
 
 type RowCol = (i32, i32);
 

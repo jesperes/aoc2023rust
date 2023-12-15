@@ -5,7 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use chrono::{Datelike, Local, TimeZone};
+use chrono::{Local, TimeZone};
 use chrono_tz::US::Eastern;
 use clap::Parser;
 use hashbrown::HashMap;
@@ -35,6 +35,7 @@ struct Result {
     time: Duration,
     iters: u32,
     actual: (String, String),
+    correct: (Option<String>, Option<String>),
 }
 
 #[derive(Parser, Debug)]
@@ -84,8 +85,14 @@ fn main() {
         .iter()
         .map(|(y, d)| {
             if let Some(solver) = lookup_solver(*y, *d) {
-                let input = aoc_fetcher::maybe_fetch_puzzle_data(*y, *d);
-                Some(invoke_solver(*y, *d, &input, &args, solver))
+                Some(invoke_solver(
+                    *y,
+                    *d,
+                    &aoc_fetcher::maybe_fetch_puzzle_data(*y, *d),
+                    &args,
+                    aoc_fetcher::maybe_fetch_puzzle_solutions(*y, *d),
+                    solver,
+                ))
             } else {
                 println!("No solver defined for ({y}, {d})");
                 None
@@ -129,7 +136,14 @@ fn is_released(year: Year, day: Day) -> bool {
             .unwrap()
 }
 
-fn invoke_solver(year: Year, day: Day, input: &String, args: &Cli, solver: &dyn Solver) -> Result {
+fn invoke_solver(
+    year: Year,
+    day: Day,
+    input: &String,
+    args: &Cli,
+    correct: (Option<String>, Option<String>),
+    solver: &dyn Solver,
+) -> Result {
     let mut actual = (String::new(), String::new());
     let elapsed: Duration;
     let mut iters: u32 = 0;
@@ -157,6 +171,7 @@ fn invoke_solver(year: Year, day: Day, input: &String, args: &Cli, solver: &dyn 
         time: elapsed / iters,
         iters,
         actual,
+        correct,
     }
 }
 
@@ -166,6 +181,17 @@ fn lookup_solver(year: Year, day: Day) -> Option<&'static dyn Solver> {
         (2023, 2) => Some(&y2023::day02::Solution),
         (2023, 3) => Some(&y2023::day03::Solution),
         (2023, 4) => Some(&y2023::day04::Solution),
+        (2023, 5) => Some(&y2023::day05::Solution),
+        (2023, 6) => Some(&y2023::day06::Solution),
+        (2023, 7) => Some(&y2023::day07::Solution),
+        (2023, 8) => Some(&y2023::day08::Solution),
+        (2023, 9) => Some(&y2023::day09::Solution),
+        (2023, 10) => Some(&y2023::day10::Solution),
+        (2023, 11) => Some(&y2023::day11::Solution),
+        (2023, 12) => Some(&y2023::day12::Solution),
+        (2023, 13) => Some(&y2023::day13::Solution),
+        (2023, 14) => Some(&y2023::day14::Solution),
+        (2023, 15) => Some(&y2023::day15::Solution),
         _ => None,
     }
 }
