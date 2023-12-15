@@ -1,11 +1,19 @@
 use hashbrown::{HashMap, HashSet};
 use itertools::{self, Itertools};
 
+use crate::Solver;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        solve(input)
+    }
+}
+
 fn is_digit(c: &u8) -> bool {
     *c >= b'0' && *c <= b'9'
 }
 
-pub fn solve(input: &str) -> (i32, i32) {
+pub fn solve(input: &str) -> (String, String) {
     let bytes = input.as_bytes();
     let w: i32 = bytes.iter().position(|&c| c == b'\n').unwrap() as i32 + 1; // include newline
 
@@ -89,5 +97,5 @@ pub fn solve(input: &str) -> (i32, i32) {
             }
         });
 
-    (p1, p2)
+    (p1.to_string(), p2.to_string())
 }

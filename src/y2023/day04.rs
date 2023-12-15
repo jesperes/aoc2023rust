@@ -1,7 +1,15 @@
 use hashbrown::{HashMap, HashSet};
 use std::convert::identity;
 
-pub fn solve(input: &str) -> (i32, i32) {
+use crate::Solver;
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        solve(input)
+    }
+}
+
+pub fn solve(input: &str) -> (String, String) {
     let mut map: HashMap<i32, i32> = HashMap::new();
 
     let (num_cards, sum) = input
@@ -28,7 +36,10 @@ pub fn solve(input: &str) -> (i32, i32) {
             (n + 1, sum0)
         });
 
-    (sum, map.values().sum::<i32>() + num_cards)
+    (
+        sum.to_string(),
+        (map.values().sum::<i32>() + num_cards).to_string(),
+    )
 }
 
 fn split_nums(s: &str) -> HashSet<i32> {

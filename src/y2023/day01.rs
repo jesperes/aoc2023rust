@@ -1,9 +1,7 @@
+type IsDigitFun = fn(&[u8], usize) -> Option<i32>;
 use crate::Solver;
 
-type IsDigitFun = fn(&[u8], usize) -> Option<i32>;
-
 pub struct Solution;
-
 impl Solver for Solution {
     fn solve(&self, input: &String) -> (String, String) {
         solve(input)
