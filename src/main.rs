@@ -33,6 +33,7 @@ pub trait Solver {
 
 #[derive(Debug)]
 pub struct PuzzleResult {
+    #[allow(dead_code)]
     year: Year,
     day: Day,
     time: Duration,
@@ -76,7 +77,7 @@ struct Cli {
 
     #[arg(
         long,
-        default_value_t = 5,
+        default_value_t = 50,
         help = "Maximum number of msecs/puzzle to run (when benchmarking)"
     )]
     max_msecs: u32,
