@@ -12,6 +12,6 @@ impl Solver for Solution {
                 0
             })
             .collect::<Vec<_>>();
-        (String::new(), String::new())
+        (String::from("tbd"), String::from("tbd"))
     }
 }

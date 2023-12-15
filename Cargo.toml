@@ -14,6 +14,7 @@ comfy-table = "7.1.0"
 dirs = "5.0.1"
 grid = "0.12.0"
 hashbrown = { version = "0.14.3", features = ["rayon"] }
+indicatif = "0.17.7"
 itertools = "0.12.0"
 lazy-regex = "3.1.0"
 lazy_static = "1.4.0"

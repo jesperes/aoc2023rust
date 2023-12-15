@@ -5,6 +5,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use indicatif::{ProgressIterator, ProgressStyle};
+
 use chrono::{Local, TimeZone};
 use chrono_tz::US::Eastern;
 use clap::Parser;
@@ -12,6 +14,7 @@ use hashbrown::HashMap;
 extern crate lazy_static;
 
 mod aoc_fetcher;
+mod table;
 mod utils;
 mod y2023;
 
@@ -29,7 +32,7 @@ pub trait Solver {
 // Structs
 
 #[derive(Debug)]
-struct Result {
+pub struct PuzzleResult {
     year: Year,
     day: Day,
     time: Duration,
@@ -81,8 +84,15 @@ struct Cli {
 
 fn main() {
     let args = Cli::parse();
+    let style = ProgressStyle::with_template(
+        "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
+    )
+    .unwrap()
+    .progress_chars("##-");
+
     let results = get_puzzles(&args)
         .iter()
+        .progress_with_style(style)
         .map(|(y, d)| {
             if let Some(solver) = lookup_solver(*y, *d) {
                 Some(invoke_solver(
@@ -101,9 +111,8 @@ fn main() {
         .filter_map(identity)
         .collect::<Vec<_>>();
 
-    for res in results {
-        println!("{:?}", res);
-    }
+    let table = table::make_table(&results);
+    println!("{table}");
 }
 
 fn get_puzzles(args: &Cli) -> Vec<(Year, Day)> {
@@ -143,14 +152,14 @@ fn invoke_solver(
     args: &Cli,
     correct: (Option<String>, Option<String>),
     solver: &dyn Solver,
-) -> Result {
+) -> PuzzleResult {
     let mut actual = (String::new(), String::new());
     let elapsed: Duration;
     let mut iters: u32 = 0;
     let start = Instant::now();
 
     if args.benchmark {
-        for _ in 1..args.max_iter {
+        for _ in 0..args.max_iter {
             actual = solver.solve(input);
             iters += 1;
             if start.elapsed().as_millis() > args.max_msecs as u128 {
@@ -165,7 +174,7 @@ fn invoke_solver(
         iters = 1;
     }
 
-    Result {
+    PuzzleResult {
         year,
         day,
         time: elapsed / iters,
