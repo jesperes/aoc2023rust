@@ -12,10 +12,17 @@ struct Range {
     to: i64,
 }
 
-pub fn part_1(input: &str) -> i64 {
+pub fn solve(input: &str) -> (i64, i64) {
+    (solve_p1(&input), solve_p2(&input))
+}
+
+pub fn solve_p1(input: &str) -> i64 {
     let (seeds_str, maps_str) = input.split_once("\n\n").unwrap();
-    let seeds = seeds_str.strip_prefix("seeds: ").unwrap();
-    let seeds = seeds.split_whitespace().map(|s| s.parse::<i64>().unwrap());
+    let seeds = seeds_str
+        .strip_prefix("seeds: ")
+        .unwrap()
+        .split_whitespace()
+        .map(|s| s.parse::<i64>().unwrap());
 
     let maps: Vec<Vec<Rule>> = maps_str
         .split("\n\n")
@@ -53,13 +60,15 @@ pub fn part_1(input: &str) -> i64 {
         .unwrap()
 }
 
-pub fn part_2(input: &str) -> i64 {
+pub fn solve_p2(input: &str) -> i64 {
     let (seeds_str, maps_str) = input.split_once("\n\n").unwrap();
-    let seeds = seeds_str.strip_prefix("seeds: ").unwrap();
-    let seeds = seeds
+    let seeds = seeds_str
+        .strip_prefix("seeds: ")
+        .unwrap()
         .split_whitespace()
         .map(|s| s.parse::<i64>().unwrap())
         .chunks(2);
+
     let seeds = seeds.into_iter().map(|mut chunk| {
         let from = chunk.next().unwrap();
         let range = chunk.next().unwrap();
@@ -88,14 +97,6 @@ pub fn part_2(input: &str) -> i64 {
         })
         .collect();
 
-    // for every range in the seed ranges, transform it to a range of the next kind, repeat until all all maps are applied, at that point all ranges are location ranges
-    // loop1 transforms those ranges of seed to ranges of soils
-    // loop2 transforms those ranges of soil to ranges of fertilizer
-    // loop3 transforms those ranges of fertilizer to ranges of water
-    // loop4 transforms those ranges of water to ranges of light
-    // loop5 transforms those ranges of light to ranges of temperature
-    // loop6 transforms those ranges of temperature to ranges of humidity
-    // loop7 transforms those ranges of humidity to ranges of location
     let mut curr_ranges: Vec<Range> = seeds.collect();
 
     for map in &maps {
@@ -153,8 +154,4 @@ pub fn part_2(input: &str) -> i64 {
     }
 
     curr_ranges.iter().map(|range| range.from).min().unwrap()
-}
-
-pub fn solve(input: &str) -> (i64, i64) {
-    (part_1(&input), part_2(&input))
 }

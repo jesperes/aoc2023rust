@@ -1,7 +1,17 @@
+use crate::Solver;
+
 type IsDigitFun = fn(&[u8], usize) -> Option<i32>;
 
-pub fn solve(input: &str) -> (i32, i32) {
-    input
+pub struct Solution;
+
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        solve(input)
+    }
+}
+
+pub fn solve(input: &String) -> (String, String) {
+    let (p1, p2) = input
         .lines()
         .map(|line| line.as_bytes())
         .filter(|s| s.len() > 0)
@@ -10,7 +20,8 @@ pub fn solve(input: &str) -> (i32, i32) {
                 p1 + get_first_last(line, is_digit1),
                 p2 + get_first_last(line, is_digit2),
             )
-        })
+        });
+    (p1.to_string(), p2.to_string())
 }
 
 fn get_first_last(line: &[u8], is_digit: IsDigitFun) -> i32 {

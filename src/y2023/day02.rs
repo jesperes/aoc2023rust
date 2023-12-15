@@ -1,13 +1,22 @@
 use itertools::Itertools;
 use lazy_regex::regex;
 
+use crate::Solver;
+
+pub struct Solution;
+impl Solver for Solution {
+    fn solve(&self, input: &String) -> (String, String) {
+        solve(input)
+    }
+}
+
 const RED: i32 = 12;
 const GREEN: i32 = 13;
 const BLUE: i32 = 14;
 
-pub fn solve(input: &str) -> (i32, i32) {
+pub fn solve(input: &String) -> (String, String) {
     // A bit for fun, solve both p1 and p2 in a single statement
-    input
+    let (p1, p2) = input
         .split("\n")
         .filter(|s| s.len() > 0)
         .fold((0, 0), |(p1, p2), line| {
@@ -46,5 +55,7 @@ pub fn solve(input: &str) -> (i32, i32) {
             );
 
             (p1 + game_id.unwrap_or(0), r * g * b + p2)
-        })
+        });
+
+    (p1.to_string(), p2.to_string())
 }
