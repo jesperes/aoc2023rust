@@ -67,21 +67,28 @@ fn parse_into_grid(input: &str) -> (Grid, (i32, i32)) {
     (grid, dims)
 }
 
-fn next_pos(pos: (i32, i32), direction: &Dir) -> (i32, i32) {
+fn next_pos(pos: &(i32, i32), direction: &Dir) -> (i32, i32) {
     let (row, col) = pos;
     match *direction {
-        RIGHT => (row, col + 1),
-        DOWN => (row + 1, col),
-        UP => (row - 1, col),
-        LEFT => (row, col - 1),
+        RIGHT => (*row, col + 1),
+        DOWN => (row + 1, *col),
+        UP => (row - 1, *col),
+        LEFT => (*row, col - 1),
         _ => unreachable!(),
     }
 }
 
-fn in_cave(pos: &(i32, i32), dims: &(i32, i32)) -> bool {
+fn in_cave(pos: &RowCol, dims: &RowCol) -> bool {
     let (row, col) = pos;
     let (rows, cols) = dims;
     *row >= 0 && row < rows && *col >= 0 && col < cols
+}
+
+fn enqueue_next_pos_if_valid(pos: &RowCol, dir: &Dir, queue: &mut Vec<QueueElem>, dims: &RowCol) {
+    let next_pos = next_pos(pos, dir);
+    if in_cave(&next_pos, dims) {
+        queue.push((next_pos, *dir));
+    }
 }
 
 /// Project a beam starting at `pos`
@@ -137,14 +144,14 @@ fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usi
         // the grid
         match dirs {
             MirrorAction::Reflect(reflect_dir) => {
-                q.push((next_pos(pos, &reflect_dir), reflect_dir));
+                enqueue_next_pos_if_valid(&pos, &reflect_dir, &mut q, dims);
             }
             MirrorAction::Passthrough => {
-                q.push((next_pos(pos, &orig_direction), orig_direction));
+                enqueue_next_pos_if_valid(&pos, &orig_direction, &mut q, dims);
             }
             MirrorAction::Split(dir1, dir2) => {
-                q.push((next_pos(pos, &dir1), dir1));
-                q.push((next_pos(pos, &dir2), dir2));
+                enqueue_next_pos_if_valid(&pos, &dir1, &mut q, dims);
+                enqueue_next_pos_if_valid(&pos, &dir2, &mut q, dims);
             }
         }
     }
