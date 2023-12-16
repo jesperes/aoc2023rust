@@ -91,6 +91,9 @@ struct Cli {
         help = "Maximum number of msecs/puzzle to run (when benchmarking)"
     )]
     max_msecs: u32,
+
+    #[arg(long, default_value_t = false, help = "Sort by time")]
+    sort: bool,
 }
 
 fn main() {
@@ -101,7 +104,7 @@ fn main() {
     .unwrap()
     .progress_chars("##-");
 
-    let results = get_puzzles(&args)
+    let mut results = get_puzzles(&args)
         .iter()
         .progress_with_style(style)
         .map(|(y, d)| {
@@ -122,7 +125,7 @@ fn main() {
         .filter_map(identity)
         .collect::<Vec<_>>();
 
-    let table = table::make_table(&results);
+    let table = table::make_table(&mut results, &args);
     println!("{table}");
 }
 

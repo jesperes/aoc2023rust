@@ -1,9 +1,12 @@
+use std::time::Duration;
+
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::*, Cell, Color, Table};
 
-use crate::PuzzleResult;
+use crate::{Cli, PuzzleResult};
 
-pub fn make_table(results: &Vec<PuzzleResult>) -> comfy_table::Table {
+pub fn make_table(results: &mut Vec<PuzzleResult>, args: &Cli) -> comfy_table::Table {
     let mut table = Table::new();
+    let total_time: Duration = results.iter().map(|res| res.time).sum();
 
     table
         .load_preset(UTF8_FULL_CONDENSED)
@@ -16,6 +19,10 @@ pub fn make_table(results: &Vec<PuzzleResult>) -> comfy_table::Table {
             Cell::new("Part 2"),
         ]);
 
+    if args.sort {
+        results.sort_by(|a, b| a.time.cmp(&b.time))
+    }
+
     for result in results {
         table.add_row(vec![
             Cell::new(result.day),
@@ -25,6 +32,13 @@ pub fn make_table(results: &Vec<PuzzleResult>) -> comfy_table::Table {
             solution_cell(&result.actual.1, &result.correct.1),
         ]);
     }
+    table.add_row(vec![
+        Cell::new("Total"),
+        Cell::new(format!("{:?}", total_time)),
+        Cell::new(""),
+        Cell::new(""),
+        Cell::new(""),
+    ]);
     table
 }
 
