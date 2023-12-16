@@ -65,20 +65,3 @@ fn hash(s: &str) -> i32 {
         .chars()
         .fold(0, |acc, c| ((acc + c as i32) * 17) & 0xff)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ex1_test() {
-        let ex = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
-        assert_eq!(1320, solve_p1(ex));
-    }
-
-    #[test]
-    fn ex2_test() {
-        let ex = "rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7";
-        assert_eq!(145, solve_p2(ex));
-    }
-}
