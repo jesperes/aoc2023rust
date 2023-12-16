@@ -86,11 +86,11 @@ fn in_cave(pos: &(i32, i32), dims: &(i32, i32)) -> bool {
 
 /// Project a beam starting at `pos`
 fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usize {
-    let mut q: BTreeSet<QueueElem> = BTreeSet::new();
+    let mut q: Vec<QueueElem> = Vec::new();
     let mut energized_map = EnergizedMap::new();
-    q.insert(start);
+    q.push(start);
 
-    while let Some((pos, orig_direction)) = q.pop_first() {
+    while let Some((pos, orig_direction)) = q.pop() {
         if !in_cave(&pos, &dims) {
             continue;
         }
@@ -133,16 +133,18 @@ fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usi
             _ => unreachable!(),
         };
 
+        // TODO do not insert elements here which we know are outside
+        // the grid
         match dirs {
             MirrorAction::Reflect(reflect_dir) => {
-                q.insert((next_pos(pos, &reflect_dir), reflect_dir));
+                q.push((next_pos(pos, &reflect_dir), reflect_dir));
             }
             MirrorAction::Passthrough => {
-                q.insert((next_pos(pos, &orig_direction), orig_direction));
+                q.push((next_pos(pos, &orig_direction), orig_direction));
             }
             MirrorAction::Split(dir1, dir2) => {
-                q.insert((next_pos(pos, &dir1), dir1));
-                q.insert((next_pos(pos, &dir2), dir2));
+                q.push((next_pos(pos, &dir1), dir1));
+                q.push((next_pos(pos, &dir2), dir2));
             }
         }
     }
