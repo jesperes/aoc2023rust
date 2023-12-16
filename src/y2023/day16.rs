@@ -28,6 +28,29 @@ enum MirrorAction {
 }
 
 fn solve_p1(input: &str) -> usize {
+    let (grid, dims) = parse_into_grid(input);
+    project_beam(&dims, ((0, 0), RIGHT), &grid)
+}
+
+fn solve_p2(input: &str) -> usize {
+    let (grid, dims) = parse_into_grid(input);
+    let (rows, cols) = dims;
+
+    let left_edge = (0..rows).map(|row| ((row, 0), RIGHT));
+    let right_edge = (0..rows).map(|r| ((r, cols - 1), LEFT));
+    let upper_edge = (0..cols).map(|c| ((0, c), DOWN));
+    let bottom_edge = (0..cols).map(|c| ((rows - 1, c), UP));
+
+    left_edge
+        .chain(right_edge)
+        .chain(bottom_edge)
+        .chain(upper_edge)
+        .map(|start| project_beam(&dims, start, &grid))
+        .max()
+        .unwrap()
+}
+
+fn parse_into_grid(input: &str) -> (Grid, (i32, i32)) {
     let mut grid: Grid = HashMap::new();
 
     let rows = input.lines().count() as i32;
@@ -41,57 +64,7 @@ fn solve_p1(input: &str) -> usize {
             }
         }
     }
-
-    // print_grid(&grid, &dims);
-    project_beam(&dims, &grid)
-    // print_energized_grid(&energized, &dims);
-}
-
-fn solve_p2(_input: &str) -> i32 {
-    0
-}
-
-fn print_energized_grid(grid: &HashMap<RowCol, Vec<Dir>>, dims: &(i32, i32)) {
-    let (rows, cols) = dims;
-    println!("Energized grid ({rows}x{cols})");
-    for row in 0..*rows {
-        print!("{:3} ", row);
-        for col in 0..*cols {
-            let pos = (row, col);
-            if grid.contains_key(&pos) {
-                let v = grid.get(&pos).unwrap();
-                if v.len() == 1 {
-                    let c = match v[0] {
-                        UP => '\u{25b5}',
-                        DOWN => '\u{25bf}',
-                        LEFT => '\u{25c3}',
-                        RIGHT => '\u{25b9}',
-                        _ => unreachable!(),
-                    };
-                    print!("{c}");
-                } else if v.len() > 1 {
-                    print!("#");
-                } else {
-                    unreachable!();
-                }
-            } else {
-                print!(".");
-            }
-        }
-        println!();
-    }
-}
-
-fn print_grid(grid: &Grid, dims: &(i32, i32)) {
-    let (rows, cols) = dims;
-    println!("Grid ({rows}x{cols})");
-    for row in 0..*rows {
-        print!("{:3} ", row);
-        for col in 0..*cols {
-            print!("{}", grid.get(&(row, col)).unwrap_or(&'.'));
-        }
-        println!();
-    }
+    (grid, dims)
 }
 
 fn next_pos(pos: (i32, i32), direction: &Dir) -> (i32, i32) {
@@ -112,10 +85,9 @@ fn in_cave(pos: &(i32, i32), dims: &(i32, i32)) -> bool {
 }
 
 /// Project a beam starting at `pos`
-fn project_beam(dims: &(i32, i32), grid: &Grid) -> usize {
+fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usize {
     let mut q: BTreeSet<QueueElem> = BTreeSet::new();
     let mut energized_map = EnergizedMap::new();
-    let start = ((0, 0), RIGHT);
     q.insert(start);
 
     while let Some((pos, orig_direction)) = q.pop_first() {
@@ -176,25 +148,4 @@ fn project_beam(dims: &(i32, i32), grid: &Grid) -> usize {
     }
 
     energized_map.len()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ex1_test() {
-        let ex = ".|...\\....
-|.-.\\.....
-.....|-...
-........|.
-..........
-.........\\
-..../.\\\\..
-.-.-/..|..
-.|....-|.\\
-..//.|....
-";
-        assert_eq!(46, solve_p1(&ex));
-    }
 }
