@@ -16,6 +16,14 @@ extern crate lazy_static;
 mod aoc_fetcher;
 mod table;
 mod utils;
+// mod y2015;
+// mod y2016;
+// mod y2017;
+// mod y2018;
+// mod y2019;
+// mod y2020;
+// mod y2021;
+// mod y2022;
 mod y2023;
 
 // Types
@@ -25,6 +33,8 @@ pub type Day = u32;
 pub type YearSolvers = HashMap<Day, dyn Solver>;
 pub type Years = HashMap<Year, YearSolvers>;
 
+// TODO convert this so that we can benchmark without converting to/from
+// strings
 pub trait Solver {
     fn solve(&self, input: &String) -> (String, String);
 }
@@ -202,6 +212,16 @@ fn lookup_solver(year: Year, day: Day) -> Option<&'static dyn Solver> {
         (2023, 13) => Some(&y2023::day13::Solution),
         (2023, 14) => Some(&y2023::day14::Solution),
         (2023, 15) => Some(&y2023::day15::Solution),
+        (2023, 16) => Some(&y2023::day16::Solution),
+        // (2023, 17) => Some(&y2023::day17::Solution),
+        // (2023, 18) => Some(&y2023::day18::Solution),
+        // (2023, 19) => Some(&y2023::day19::Solution),
+        // (2023, 20) => Some(&y2023::day20::Solution),
+        // (2023, 21) => Some(&y2023::day21::Solution),
+        // (2023, 22) => Some(&y2023::day22::Solution),
+        // (2023, 23) => Some(&y2023::day23::Solution),
+        // (2023, 24) => Some(&y2023::day24::Solution),
+        // (2023, 25) => Some(&y2023::day25::Solution),
         _ => None,
     }
 }
