@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use hashbrown::HashMap;
 
 use crate::Solver;
@@ -98,10 +96,6 @@ fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usi
     q.push(start);
 
     while let Some((pos, orig_direction)) = q.pop() {
-        if !in_cave(&pos, &dims) {
-            continue;
-        }
-
         let energy = energized_map.entry(pos).or_insert(0);
         if *energy & orig_direction != 0 {
             // loop
@@ -109,8 +103,6 @@ fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usi
         } else {
             *energy = orig_direction
         }
-
-        // Check if we hit the cave wall
 
         let dirs: MirrorAction = match (grid.get(&pos), orig_direction) {
             // Passing through empty space or splitters
