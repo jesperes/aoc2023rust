@@ -95,12 +95,12 @@ fn project_beam(dims: &(i32, i32), start: ((i32, i32), i32), grid: &Grid) -> usi
             continue;
         }
 
-        let energy = energized_map.get(&pos).unwrap_or(&0);
-        if energy & orig_direction != 0 {
+        let energy = energized_map.entry(pos).or_insert(0);
+        if *energy & orig_direction != 0 {
             // loop
             continue;
         } else {
-            energized_map.insert(pos, energy | orig_direction);
+            *energy = orig_direction
         }
 
         // Check if we hit the cave wall
