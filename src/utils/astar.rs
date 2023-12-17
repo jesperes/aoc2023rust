@@ -12,7 +12,7 @@ use std::hash::Hash;
 /// Search states also have a key used for detecting loops.
 pub trait SearchState {
     /// The type of the state's key.
-    type Key: Hash + Ord + Clone;
+    type Key: Hash + Ord + Clone + Copy + std::fmt::Debug;
     type Iter: Iterator<Item = Self>;
 
     fn key(&self) -> Self::Key;
@@ -77,7 +77,9 @@ pub fn solve<S: SearchState>(start_state: S) -> Option<S> {
             return Some(state);
         }
 
-        state.next_states().for_each(|s| search.insert(s));
+        state.next_states().for_each(|s| {
+            search.insert(s);
+        });
     }
 
     None

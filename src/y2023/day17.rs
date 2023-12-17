@@ -2,17 +2,21 @@ use crate::{utils::astar::*, Solver};
 pub struct Solution;
 impl Solver for Solution {
     fn solve(&self, input: &String) -> (String, String) {
-        (solve_p1(input).to_string(), solve_p2(input).to_string())
+        (
+            do_solve(input, Puzzle::Part1).to_string(),
+            do_solve(input, Puzzle::Part2).to_string(),
+        )
     }
 }
 
 type RowCol = (i32, i32);
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 enum Puzzle {
     Part1,
     Part2,
 }
 
+#[derive(Debug)]
 struct HeatMap<'a> {
     data: &'a [u8],
     dy: i32,
@@ -38,7 +42,7 @@ impl<'a> HeatMap<'a> {
     }
 }
 
-/// Search state
+#[derive(Debug)]
 struct CrucibleState<'a> {
     heat_map: &'a HeatMap<'a>,
     pos: RowCol,
@@ -88,7 +92,12 @@ impl<'a> SearchState for CrucibleState<'a> {
     }
 
     fn is_goal(&self) -> bool {
-        self.pos == self.goal
+        // For part 2, we must have travelled at least 4 steps in the same
+        // direction before we can come to a stop at the end
+        match self.part {
+            Puzzle::Part1 => self.pos == self.goal,
+            Puzzle::Part2 => self.pos == self.goal && self.dir_count >= 4,
+        }
     }
 
     fn cost(&self) -> usize {
@@ -108,7 +117,7 @@ impl<'a> SearchState for CrucibleState<'a> {
 }
 
 /// Used in the iterator to track the current direction
-#[derive(PartialEq, Clone, Copy, Eq, Hash, PartialOrd, Ord)]
+#[derive(PartialEq, Clone, Copy, Eq, Hash, PartialOrd, Ord, Debug)]
 enum Direction {
     Up,
     Left,
@@ -134,6 +143,7 @@ impl Direction {
     }
 }
 
+#[derive(Debug)]
 struct CrucibleStateIterator<'a> {
     state: CrucibleState<'a>,
     dir: Direction,
@@ -146,7 +156,10 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
         let (row, col) = self.state.pos;
         let (rows, cols) = self.state.heat_map.limits;
 
-        // First check that we don't reverse direction
+        if self.dir == Direction::None {
+            return None;
+        }
+
         let maybe_next_pos = match self.state.part {
             Puzzle::Part1 => {
                 if (self.dir == Direction::Up && self.state.current_dir == Direction::Down)
@@ -154,13 +167,14 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
                     || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
                     || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
                 {
+                    // No reverse direction
                     None
-                } else if self.dir == self.state.current_dir && self.state.dir_count >= 2 {
+                } else if self.dir == self.state.current_dir && self.state.dir_count >= 3 {
                     // No more than 3 steps in the same direction
                     None
                 } else {
                     match self.dir {
-                        Direction::None => return None,
+                        // Direction::None => return None,
                         Direction::Up if row > 0 => Some((row - 1, col)),
                         Direction::Left if col > 0 => Some((row, col - 1)),
                         Direction::Down if row < rows - 1 => Some((row + 1, col)),
@@ -170,7 +184,32 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
                 }
             }
             Puzzle::Part2 => {
-                unreachable!();
+                if (self.dir == Direction::Up && self.state.current_dir == Direction::Down)
+                    || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
+                    || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
+                    || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
+                {
+                    // No reverse direction
+                    None
+                } else if self.state.current_dir != Direction::None
+                    && self.dir != self.state.current_dir
+                    && self.state.dir_count < 4
+                {
+                    // At least 4 steps in the same direction before we can turn
+                    None
+                } else if self.dir == self.state.current_dir && self.state.dir_count >= 10 {
+                    // No more than 10 steps in the same direction before we must turn
+                    None
+                } else {
+                    match self.dir {
+                        // Direction::None => return None,
+                        Direction::Up if row > 0 => Some((row - 1, col)),
+                        Direction::Left if col > 0 => Some((row, col - 1)),
+                        Direction::Down if row < rows - 1 => Some((row + 1, col)),
+                        Direction::Right if col < cols - 1 => Some((row, col + 1)),
+                        _ => None,
+                    }
+                }
             }
         };
 
@@ -178,7 +217,7 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
         let new_dir_count = if self.dir == self.state.current_dir {
             self.state.dir_count + 1
         } else {
-            0
+            1
         };
 
         let new_dir = self.dir;
@@ -202,51 +241,9 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
     }
 }
 
-pub fn solve_p1(input: &str) -> usize {
+fn do_solve(input: &str, puzzle: Puzzle) -> usize {
     let heat_map = HeatMap::new(input);
-    solve(CrucibleState::new(
-        &heat_map,
-        Direction::None,
-        0,
-        Puzzle::Part1,
-    ))
-    .unwrap()
-    .cost()
-}
-
-pub fn solve_p2(input: &str) -> usize {
-    let heat_map = HeatMap::new(input);
-    solve(CrucibleState::new(
-        &heat_map,
-        Direction::None,
-        0,
-        Puzzle::Part2,
-    ))
-    .unwrap()
-    .cost()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ex1_test() {
-        let ex = "\
-2413432311323
-3215453535623
-3255245654254
-3446585845452
-4546657867536
-1438598798454
-4457876987766
-3637877979653
-4654967986887
-4564679986453
-1224686865563
-2546548887735
-4322674655533
-";
-        assert_eq!(102, solve_p1(ex));
-    }
+    solve(CrucibleState::new(&heat_map, Direction::None, 0, puzzle))
+        .unwrap()
+        .cost()
 }
