@@ -3,17 +3,33 @@ pub struct Solution;
 impl Solver for Solution {
     fn solve(&self, input: &String) -> (String, String) {
         (
-            do_solve(input, Puzzle::Part1).to_string(),
-            do_solve(input, Puzzle::Part2).to_string(),
+            // max_straight_count = 4
+            do_solve(
+                input,
+                Config {
+                    max_straight_count: 3,
+                    min_straight_count: None,
+                },
+            )
+            .to_string(),
+            // max_straight_count = 10, min_straight_count = 4
+            do_solve(
+                input,
+                Config {
+                    max_straight_count: 10,
+                    min_straight_count: Some(4),
+                },
+            )
+            .to_string(),
         )
     }
 }
 
 type RowCol = (i32, i32);
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-enum Puzzle {
-    Part1,
-    Part2,
+
+struct Config {
+    max_straight_count: i32,
+    min_straight_count: Option<i32>,
 }
 
 #[derive(Debug)]
@@ -42,7 +58,6 @@ impl<'a> HeatMap<'a> {
     }
 }
 
-#[derive(Debug)]
 struct CrucibleState<'a> {
     heat_map: &'a HeatMap<'a>,
     pos: RowCol,
@@ -56,7 +71,7 @@ struct CrucibleState<'a> {
     total_cost: usize,
 
     // Part 1 and 2 have slightly different semantics
-    part: Puzzle,
+    config: &'a Config,
 }
 
 impl<'a> CrucibleState<'a> {
@@ -64,7 +79,7 @@ impl<'a> CrucibleState<'a> {
         heat_map: &'a HeatMap<'a>,
         straight_dir: Direction,
         straight_count: i32,
-        part: Puzzle,
+        config: &'a Config,
     ) -> CrucibleState<'a> {
         let (rows, cols) = heat_map.limits;
         CrucibleState {
@@ -74,7 +89,7 @@ impl<'a> CrucibleState<'a> {
             total_cost: 0,
             dir_count: straight_count,
             current_dir: straight_dir,
-            part,
+            config,
         }
     }
 }
@@ -92,11 +107,10 @@ impl<'a> SearchState for CrucibleState<'a> {
     }
 
     fn is_goal(&self) -> bool {
-        // For part 2, we must have travelled at least 4 steps in the same
-        // direction before we can come to a stop at the end
-        match self.part {
-            Puzzle::Part1 => self.pos == self.goal,
-            Puzzle::Part2 => self.pos == self.goal && self.dir_count >= 4,
+        if let Some(min_straight_count) = self.config.min_straight_count {
+            self.pos == self.goal && self.dir_count >= min_straight_count
+        } else {
+            self.pos == self.goal
         }
     }
 
@@ -143,7 +157,6 @@ impl Direction {
     }
 }
 
-#[derive(Debug)]
 struct CrucibleStateIterator<'a> {
     state: CrucibleState<'a>,
     dir: Direction,
@@ -160,56 +173,31 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
             return None;
         }
 
-        let maybe_next_pos = match self.state.part {
-            Puzzle::Part1 => {
-                if (self.dir == Direction::Up && self.state.current_dir == Direction::Down)
-                    || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
-                    || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
-                    || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
-                {
-                    // No reverse direction
-                    None
-                } else if self.dir == self.state.current_dir && self.state.dir_count >= 3 {
-                    // No more than 3 steps in the same direction
-                    None
-                } else {
-                    match self.dir {
-                        // Direction::None => return None,
-                        Direction::Up if row > 0 => Some((row - 1, col)),
-                        Direction::Left if col > 0 => Some((row, col - 1)),
-                        Direction::Down if row < rows - 1 => Some((row + 1, col)),
-                        Direction::Right if col < cols - 1 => Some((row, col + 1)),
-                        _ => None,
-                    }
-                }
-            }
-            Puzzle::Part2 => {
-                if (self.dir == Direction::Up && self.state.current_dir == Direction::Down)
-                    || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
-                    || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
-                    || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
-                {
-                    // No reverse direction
-                    None
-                } else if self.state.current_dir != Direction::None
-                    && self.dir != self.state.current_dir
-                    && self.state.dir_count < 4
-                {
-                    // At least 4 steps in the same direction before we can turn
-                    None
-                } else if self.dir == self.state.current_dir && self.state.dir_count >= 10 {
-                    // No more than 10 steps in the same direction before we must turn
-                    None
-                } else {
-                    match self.dir {
-                        // Direction::None => return None,
-                        Direction::Up if row > 0 => Some((row - 1, col)),
-                        Direction::Left if col > 0 => Some((row, col - 1)),
-                        Direction::Down if row < rows - 1 => Some((row + 1, col)),
-                        Direction::Right if col < cols - 1 => Some((row, col + 1)),
-                        _ => None,
-                    }
-                }
+        let maybe_next_pos = if (self.dir == Direction::Up
+            && self.state.current_dir == Direction::Down)
+            || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
+            || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
+            || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
+        {
+            // No reverse direction
+            None
+        } else if self.state.dir_count < self.state.config.min_straight_count.unwrap_or(0)
+            && self.state.current_dir != Direction::None
+            && self.dir != self.state.current_dir
+        {
+            None
+        } else if self.dir == self.state.current_dir
+            && self.state.dir_count >= self.state.config.max_straight_count
+        {
+            None
+        } else {
+            match self.dir {
+                // Direction::None => return None,
+                Direction::Up if row > 0 => Some((row - 1, col)),
+                Direction::Left if col > 0 => Some((row, col - 1)),
+                Direction::Down if row < rows - 1 => Some((row + 1, col)),
+                Direction::Right if col < cols - 1 => Some((row, col + 1)),
+                _ => None,
             }
         };
 
@@ -233,7 +221,7 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
                 goal: self.state.goal,
                 dir_count: new_dir_count,
                 current_dir: new_dir,
-                part: self.state.part,
+                config: &self.state.config,
             })
         } else {
             self.next()
@@ -241,9 +229,9 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
     }
 }
 
-fn do_solve(input: &str, puzzle: Puzzle) -> usize {
+fn do_solve(input: &str, config: Config) -> usize {
     let heat_map = HeatMap::new(input);
-    solve(CrucibleState::new(&heat_map, Direction::None, 0, puzzle))
+    solve(CrucibleState::new(&heat_map, Direction::None, 0, &config))
         .unwrap()
         .cost()
 }
