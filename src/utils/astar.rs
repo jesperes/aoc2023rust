@@ -12,7 +12,7 @@ use std::hash::Hash;
 /// Search states also have a key used for detecting loops.
 pub trait SearchState {
     /// The type of the state's key.
-    type Key: Hash + Ord + Clone + Copy + std::fmt::Debug;
+    type Key: Hash + Ord + Clone;
     type Iter: Iterator<Item = Self>;
 
     fn key(&self) -> Self::Key;

@@ -2,45 +2,49 @@ use crate::{utils::astar::*, Solver};
 pub struct Solution;
 impl Solver for Solution {
     fn solve(&self, input: &String) -> (String, String) {
+        let p1 = Config {
+            max_cnt: 3,
+            min_cnt: None,
+        };
+        let p2 = Config {
+            max_cnt: 10,
+            min_cnt: Some(4),
+        };
         (
-            // max_straight_count = 4
-            do_solve(
-                input,
-                Config {
-                    max_straight_count: 3,
-                    min_straight_count: None,
-                },
-            )
-            .to_string(),
-            // max_straight_count = 10, min_straight_count = 4
-            do_solve(
-                input,
-                Config {
-                    max_straight_count: 10,
-                    min_straight_count: Some(4),
-                },
-            )
-            .to_string(),
+            do_solve(input, p1).to_string(),
+            do_solve(input, p2).to_string(),
         )
     }
 }
 
 type RowCol = (i32, i32);
 
-struct Config {
-    max_straight_count: i32,
-    min_straight_count: Option<i32>,
+#[derive(PartialEq, Clone, Copy, Eq, PartialOrd, Ord, Hash)]
+enum Dir {
+    Up,
+    Left,
+    Down,
+    Right,
+    Unspecified,
 }
 
-#[derive(Debug)]
+struct Config {
+    // Maximum number of steps in a straight line before we must turn
+    max_cnt: i32,
+    // Minimum number of steps in a straight line before we are allowed to make a turn
+    min_cnt: Option<i32>,
+}
+
 struct HeatMap<'a> {
     data: &'a [u8],
     dy: i32,
     limits: RowCol,
+    goal: RowCol,
+    config: &'a Config,
 }
 
 impl<'a> HeatMap<'a> {
-    fn new(input: &'a str) -> HeatMap<'a> {
+    fn new(input: &'a str, config: &'a Config) -> HeatMap<'a> {
         let cols = input.lines().next().unwrap().len() as i32;
         let rows = input.lines().count() as i32;
 
@@ -48,6 +52,8 @@ impl<'a> HeatMap<'a> {
             data: input.as_bytes(),
             dy: cols + 1,
             limits: (rows, cols),
+            goal: (rows - 1, cols - 1),
+            config,
         }
     }
 
@@ -61,35 +67,23 @@ impl<'a> HeatMap<'a> {
 struct CrucibleState<'a> {
     heat_map: &'a HeatMap<'a>,
     pos: RowCol,
-    goal: RowCol,
 
     // Track straight lines
     dir_count: i32,
-    current_dir: Direction,
+    current_dir: Dir,
 
     // The total cost of reaching this node, including the cost of this node
     total_cost: usize,
-
-    // Part 1 and 2 have slightly different semantics
-    config: &'a Config,
 }
 
 impl<'a> CrucibleState<'a> {
-    fn new(
-        heat_map: &'a HeatMap<'a>,
-        straight_dir: Direction,
-        straight_count: i32,
-        config: &'a Config,
-    ) -> CrucibleState<'a> {
-        let (rows, cols) = heat_map.limits;
+    fn new(heat_map: &'a HeatMap<'a>, straight_dir: Dir, straight_count: i32) -> CrucibleState<'a> {
         CrucibleState {
             heat_map,
             pos: (0, 0),
-            goal: (rows - 1, cols - 1),
             total_cost: 0,
             dir_count: straight_count,
             current_dir: straight_dir,
-            config,
         }
     }
 }
@@ -98,19 +92,19 @@ impl<'a> SearchState for CrucibleState<'a> {
     // We need to distinguish search states depending on which direction we
     // reached them in, and how far we have travelled in a straight line when
     // doing so.
-    type Key = (RowCol, Direction, i32);
+    type Key = (RowCol, Dir, i32);
 
-    type Iter = CrucibleStateIterator<'a>;
+    type Iter = std::vec::IntoIter<CrucibleState<'a>>;
 
     fn key(&self) -> Self::Key {
         (self.pos, self.current_dir, self.dir_count)
     }
 
     fn is_goal(&self) -> bool {
-        if let Some(min_straight_count) = self.config.min_straight_count {
-            self.pos == self.goal && self.dir_count >= min_straight_count
+        if let Some(min_straight_count) = self.heat_map.config.min_cnt {
+            self.pos == self.heat_map.goal && self.dir_count >= min_straight_count
         } else {
-            self.pos == self.goal
+            self.pos == self.heat_map.goal
         }
     }
 
@@ -119,119 +113,67 @@ impl<'a> SearchState for CrucibleState<'a> {
     }
 
     fn heuristic(&self) -> usize {
-        (self.pos.0.abs_diff(self.goal.0) + self.pos.1.abs_diff(self.goal.1)) as usize
+        (self.pos.0.abs_diff(self.heat_map.goal.0) + self.pos.1.abs_diff(self.heat_map.goal.1))
+            as usize
     }
 
     fn next_states(self) -> Self::Iter {
-        CrucibleStateIterator {
-            state: self,
-            dir: Direction::first(),
-        }
-    }
-}
+        use Dir::*;
 
-/// Used in the iterator to track the current direction
-#[derive(PartialEq, Clone, Copy, Eq, Hash, PartialOrd, Ord, Debug)]
-enum Direction {
-    Up,
-    Left,
-    Down,
-    Right,
-    None,
-}
+        let v = vec![
+            (Up, (-1, 0)),
+            (Down, (1, 0)),
+            (Left, (0, -1)),
+            (Right, (0, 1)),
+        ];
 
-impl Direction {
-    fn first() -> Direction {
-        Direction::Up
-    }
+        v.into_iter()
+            .filter_map(|(dir, (delta_row, delta_col))| {
+                let count = self.dir_count;
+                let curr_dir = self.current_dir;
 
-    fn bump(&mut self) {
-        use Direction::*;
-        *self = match self {
-            Up => Left,
-            Left => Down,
-            Down => Right,
-            Right => None,
-            None => None,
-        };
-    }
-}
-
-struct CrucibleStateIterator<'a> {
-    state: CrucibleState<'a>,
-    dir: Direction,
-}
-
-impl<'a> Iterator for CrucibleStateIterator<'a> {
-    type Item = CrucibleState<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let (row, col) = self.state.pos;
-        let (rows, cols) = self.state.heat_map.limits;
-
-        if self.dir == Direction::None {
-            return None;
-        }
-
-        let maybe_next_pos = if (self.dir == Direction::Up
-            && self.state.current_dir == Direction::Down)
-            || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
-            || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
-            || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
-        {
-            // No reverse direction
-            None
-        } else if self.state.dir_count < self.state.config.min_straight_count.unwrap_or(0)
-            && self.state.current_dir != Direction::None
-            && self.dir != self.state.current_dir
-        {
-            None
-        } else if self.dir == self.state.current_dir
-            && self.state.dir_count >= self.state.config.max_straight_count
-        {
-            None
-        } else {
-            match self.dir {
-                // Direction::None => return None,
-                Direction::Up if row > 0 => Some((row - 1, col)),
-                Direction::Left if col > 0 => Some((row, col - 1)),
-                Direction::Down if row < rows - 1 => Some((row + 1, col)),
-                Direction::Right if col < cols - 1 => Some((row, col + 1)),
-                _ => None,
-            }
-        };
-
-        // Count number of steps we have taken in the same direction
-        let new_dir_count = if self.dir == self.state.current_dir {
-            self.state.dir_count + 1
-        } else {
-            1
-        };
-
-        let new_dir = self.dir;
-
-        self.dir.bump();
-        if let Some(next_pos) = maybe_next_pos {
-            let (next_row, next_col) = next_pos;
-            Some(CrucibleState {
-                heat_map: self.state.heat_map,
-                pos: (next_row, next_col),
-                total_cost: self.state.total_cost
-                    + self.state.heat_map.heat_loss(next_pos) as usize,
-                goal: self.state.goal,
-                dir_count: new_dir_count,
-                current_dir: new_dir,
-                config: &self.state.config,
+                // First, check the conditions on which directions we are allowed to take
+                if (curr_dir == dir && count >= self.heat_map.config.max_cnt)
+                    || (curr_dir != dir
+                        && curr_dir != Unspecified
+                        && count < self.heat_map.config.min_cnt.unwrap_or(0))
+                    || ((curr_dir == Up && dir == Down)
+                        || (curr_dir == Down && dir == Up)
+                        || (curr_dir == Right && dir == Left)
+                        || (curr_dir == Left && dir == Right))
+                {
+                    None
+                } else {
+                    let (rows, cols) = self.heat_map.limits;
+                    let (row, col) = self.pos;
+                    let (nrow, ncol) = (row + delta_row, col + delta_col);
+                    let dir_count = if dir == curr_dir {
+                        self.dir_count + 1
+                    } else {
+                        1
+                    };
+                    if nrow >= 0 && nrow < rows && ncol >= 0 && ncol < cols {
+                        Some((dir, dir_count, (nrow, ncol)))
+                    } else {
+                        None
+                    }
+                }
             })
-        } else {
-            self.next()
-        }
+            .map(|(dir, dir_count, pos)| CrucibleState {
+                heat_map: self.heat_map,
+                pos,
+                total_cost: self.total_cost + self.heat_map.heat_loss(pos) as usize,
+                dir_count,
+                current_dir: dir,
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 }
 
 fn do_solve(input: &str, config: Config) -> usize {
-    let heat_map = HeatMap::new(input);
-    solve(CrucibleState::new(&heat_map, Direction::None, 0, &config))
+    let heat_map = HeatMap::new(input, &config);
+    solve(CrucibleState::new(&heat_map, Dir::Unspecified, 0))
         .unwrap()
         .cost()
 }
