@@ -1,5 +1,4 @@
 /// Borrowed from https://github.com/dszoboszlay/adventofcode/blob/main/rust/src/utils/astar.rs
-
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::hash::Hash;
