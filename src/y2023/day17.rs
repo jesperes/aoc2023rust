@@ -7,6 +7,11 @@ impl Solver for Solution {
 }
 
 type RowCol = (i32, i32);
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum Puzzle {
+    Part1,
+    Part2,
+}
 
 struct HeatMap<'a> {
     data: &'a [u8],
@@ -47,7 +52,7 @@ struct CrucibleState<'a> {
     total_cost: usize,
 
     // Part 1 and 2 have slightly different semantics
-    part: i32,
+    part: Puzzle,
 }
 
 impl<'a> CrucibleState<'a> {
@@ -55,7 +60,7 @@ impl<'a> CrucibleState<'a> {
         heat_map: &'a HeatMap<'a>,
         straight_dir: Direction,
         straight_count: i32,
-        part: i32,
+        part: Puzzle,
     ) -> CrucibleState<'a> {
         let (rows, cols) = heat_map.limits;
         CrucibleState {
@@ -65,7 +70,7 @@ impl<'a> CrucibleState<'a> {
             total_cost: 0,
             dir_count: straight_count,
             current_dir: straight_dir,
-            part: part,
+            part,
         }
     }
 }
@@ -134,8 +139,6 @@ struct CrucibleStateIterator<'a> {
     dir: Direction,
 }
 
-// 995 too low
-
 impl<'a> Iterator for CrucibleStateIterator<'a> {
     type Item = CrucibleState<'a>;
 
@@ -144,24 +147,30 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
         let (rows, cols) = self.state.heat_map.limits;
 
         // First check that we don't reverse direction
-        let maybe_next_pos = if (self.dir == Direction::Up
-            && self.state.current_dir == Direction::Down)
-            || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
-            || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
-            || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
-        {
-            None
-        } else if self.dir == self.state.current_dir && self.state.dir_count >= 2 {
-            // No more than 3 steps in the same direction
-            None
-        } else {
-            match self.dir {
-                Direction::None => return None,
-                Direction::Up if row > 0 => Some((row - 1, col)),
-                Direction::Left if col > 0 => Some((row, col - 1)),
-                Direction::Down if row < rows - 1 => Some((row + 1, col)),
-                Direction::Right if col < cols - 1 => Some((row, col + 1)),
-                _ => None,
+        let maybe_next_pos = match self.state.part {
+            Puzzle::Part1 => {
+                if (self.dir == Direction::Up && self.state.current_dir == Direction::Down)
+                    || (self.dir == Direction::Down && self.state.current_dir == Direction::Up)
+                    || (self.dir == Direction::Left && self.state.current_dir == Direction::Right)
+                    || (self.dir == Direction::Right && self.state.current_dir == Direction::Left)
+                {
+                    None
+                } else if self.dir == self.state.current_dir && self.state.dir_count >= 2 {
+                    // No more than 3 steps in the same direction
+                    None
+                } else {
+                    match self.dir {
+                        Direction::None => return None,
+                        Direction::Up if row > 0 => Some((row - 1, col)),
+                        Direction::Left if col > 0 => Some((row, col - 1)),
+                        Direction::Down if row < rows - 1 => Some((row + 1, col)),
+                        Direction::Right if col < cols - 1 => Some((row, col + 1)),
+                        _ => None,
+                    }
+                }
+            }
+            Puzzle::Part2 => {
+                unreachable!();
             }
         };
 
@@ -173,8 +182,8 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
         };
 
         let new_dir = self.dir;
-        self.dir.bump();
 
+        self.dir.bump();
         if let Some(next_pos) = maybe_next_pos {
             let (next_row, next_col) = next_pos;
             Some(CrucibleState {
@@ -195,16 +204,26 @@ impl<'a> Iterator for CrucibleStateIterator<'a> {
 
 pub fn solve_p1(input: &str) -> usize {
     let heat_map = HeatMap::new(input);
-    solve(CrucibleState::new(&heat_map, Direction::None, 0, 1))
-        .unwrap()
-        .cost()
+    solve(CrucibleState::new(
+        &heat_map,
+        Direction::None,
+        0,
+        Puzzle::Part1,
+    ))
+    .unwrap()
+    .cost()
 }
 
 pub fn solve_p2(input: &str) -> usize {
     let heat_map = HeatMap::new(input);
-    solve(CrucibleState::new(&heat_map, Direction::None, 0, 2))
-        .unwrap()
-        .cost()
+    solve(CrucibleState::new(
+        &heat_map,
+        Direction::None,
+        0,
+        Puzzle::Part2,
+    ))
+    .unwrap()
+    .cost()
 }
 
 #[cfg(test)]
