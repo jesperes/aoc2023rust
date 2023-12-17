@@ -14,14 +14,6 @@ enum HandType {
     FiveOfAKind,
 }
 
-// #[derive(Debug, Clone)]
-// struct Hand {
-//     // hand: String,
-//     hand_type: HandType,
-//     sort_key: (usize, usize, usize, usize, usize),
-//     bid: usize,
-// }
-
 impl Solver for Solution {
     fn solve(&self, input: &String) -> (String, String) {
         let p1 = find_total_winnings(
