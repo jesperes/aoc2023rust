@@ -14,24 +14,24 @@ enum HandType {
     FiveOfAKind,
 }
 
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
-        let p1 = find_total_winnings(
-            input,
-            &classify_hand,
-            vec![
-                'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
-            ],
-        );
-
-        let p2 = find_total_winnings(
-            input,
-            &classify_hand_with_jokers,
-            vec![
-                'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
-            ],
-        );
-        (p1.to_string(), p2.to_string())
+impl Solver<usize, usize> for Solution {
+    fn solve(&self, input: &str) -> (usize, usize) {
+        (
+            find_total_winnings(
+                input,
+                &classify_hand,
+                vec![
+                    'A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2',
+                ],
+            ),
+            find_total_winnings(
+                input,
+                &classify_hand_with_jokers,
+                vec![
+                    'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
+                ],
+            ),
+        )
     }
 }
 

@@ -2,17 +2,17 @@ use itertools::Itertools;
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i64, i64> for Solution {
+    fn solve(&self, input: &str) -> (i64, i64) {
         solve(input)
     }
 }
 
-pub fn solve(input: &str) -> (String, String) {
+pub fn solve(input: &str) -> (i64, i64) {
     let (times, dists) = input.split_once('\n').unwrap();
     let p1 = solve_p1(times, dists);
     let p2 = solve_p2(times, dists);
-    (p1.to_string(), p2.to_string())
+    (p1, p2)
 }
 
 fn solve_p1(times: &str, dists: &str) -> i64 {

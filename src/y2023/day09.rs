@@ -2,8 +2,8 @@ use itertools::Itertools;
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i64, i64> for Solution {
+    fn solve(&self, input: &str) -> (i64, i64) {
         let input = input
             .lines()
             .map(|line| {
@@ -14,8 +14,8 @@ impl Solver for Solution {
             .collect_vec();
 
         (
-            do_solve(&input, &predict_next).to_string(),
-            do_solve(&input, &predict_prev).to_string(),
+            do_solve(&input, &predict_next),
+            do_solve(&input, &predict_prev),
         )
     }
 }

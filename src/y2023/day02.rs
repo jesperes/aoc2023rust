@@ -3,8 +3,8 @@ use lazy_regex::regex;
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i32, i32> for Solution {
+    fn solve(&self, input: &str) -> (i32, i32) {
         solve(input)
     }
 }
@@ -13,9 +13,9 @@ const RED: i32 = 12;
 const GREEN: i32 = 13;
 const BLUE: i32 = 14;
 
-pub fn solve(input: &str) -> (String, String) {
+pub fn solve(input: &str) -> (i32, i32) {
     // A bit for fun, solve both p1 and p2 in a single statement
-    let (p1, p2) = input
+    input
         .split('\n')
         .filter(|s| !s.is_empty())
         .fold((0, 0), |(p1, p2), line| {
@@ -54,7 +54,5 @@ pub fn solve(input: &str) -> (String, String) {
             );
 
             (p1 + game_id.unwrap_or(0), r * g * b + p2)
-        });
-
-    (p1.to_string(), p2.to_string())
+        })
 }

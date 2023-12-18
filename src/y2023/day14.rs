@@ -1,8 +1,7 @@
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
-        let (p1, p2) = solve(input);
-        (p1.to_string(), p2.to_string())
+impl Solver<usize, usize> for Solution {
+    fn solve(&self, input: &str) -> (usize, usize) {
+        solve(input)
     }
 }
 

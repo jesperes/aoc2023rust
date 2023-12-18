@@ -1,14 +1,32 @@
+use crate::Solver;
+use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
+
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
-        let (p1, p2) = solve(input);
-        (p1.to_string(), p2.to_string())
+impl Solver<usize, usize> for Solution {
+    fn solve(&self, input: &str) -> (usize, usize) {
+        // Solve p1 and p2 in parallel
+        let mut solutions = vec![0, 1]
+            .par_iter()
+            .map(|part| {
+                let sort_key = *part as usize;
+                let smudge = *part;
+                let solution = do_solve(input, smudge);
+                (sort_key, solution)
+            })
+            .collect::<Vec<(usize, usize)>>();
+
+        solutions.sort();
+        (solutions[0].1, solutions[1].1)
     }
 }
 
-use rayon::iter::{IntoParallelRefIterator, ParallelBridge, ParallelIterator};
-
-use crate::Solver;
+fn do_solve(input: &str, smudges: u32) -> usize {
+    input
+        .split("\n\n")
+        .par_bridge()
+        .map(|grid| summarize(grid, smudges))
+        .sum()
+}
 
 // Represent the mirror as a vector of ints
 type MirrorBits = Vec<u32>;
@@ -50,28 +68,4 @@ fn summarize(grid: &str, smudges: u32) -> usize {
             )
         })
         .unwrap()
-}
-
-pub fn solve(input: &str) -> (usize, usize) {
-    // Solve p1 and p2 in parallel
-    let mut solutions = vec![0, 1]
-        .par_iter()
-        .map(|part| {
-            let sort_key = *part as usize;
-            let smudge = *part;
-            let solution = do_solve(input, smudge);
-            (sort_key, solution)
-        })
-        .collect::<Vec<(usize, usize)>>();
-
-    solutions.sort();
-    (solutions[0].1, solutions[1].1)
-}
-
-fn do_solve(input: &str, smudges: u32) -> usize {
-    input
-        .split("\n\n")
-        .par_bridge()
-        .map(|grid| summarize(grid, smudges))
-        .sum()
 }

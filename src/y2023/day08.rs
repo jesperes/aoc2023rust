@@ -11,8 +11,8 @@ use rayon::{
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i64, i64> for Solution {
+    fn solve(&self, input: &str) -> (i64, i64) {
         let (line1, rest) = input.split_once('\n').unwrap();
 
         let dirs = line1.as_bytes();
@@ -25,10 +25,7 @@ impl Solver for Solution {
             map.insert(from, (left, right));
         }
 
-        (
-            solve_p1(&map, dirs).to_string(),
-            solve_p2(&map, dirs).to_string(),
-        )
+        (solve_p1(&map, dirs), solve_p2(&map, dirs))
     }
 }
 

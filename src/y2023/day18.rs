@@ -3,9 +3,9 @@ use nd_vec::vector;
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
-        (solve_p1(input).to_string(), solve_p2(input).to_string())
+impl Solver<i64, i64> for Solution {
+    fn solve(&self, input: &str) -> (i64, i64) {
+        (solve_p1(input), solve_p2(input))
     }
 }
 

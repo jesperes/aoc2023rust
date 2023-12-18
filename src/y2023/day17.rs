@@ -1,7 +1,7 @@
 use crate::{utils::astar::*, Solver};
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<usize, usize> for Solution {
+    fn solve(&self, input: &str) -> (usize, usize) {
         let p1 = Config {
             max_cnt: 3,
             min_cnt: None,
@@ -10,10 +10,7 @@ impl Solver for Solution {
             max_cnt: 10,
             min_cnt: Some(4),
         };
-        (
-            do_solve(input, p1).to_string(),
-            do_solve(input, p2).to_string(),
-        )
+        (do_solve(input, p1), do_solve(input, p2))
     }
 }
 

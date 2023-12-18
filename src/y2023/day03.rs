@@ -3,8 +3,8 @@ use itertools::{self, Itertools};
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i32, i32> for Solution {
+    fn solve(&self, input: &str) -> (i32, i32) {
         solve(input)
     }
 }
@@ -13,7 +13,7 @@ fn is_digit(c: &u8) -> bool {
     *c >= b'0' && *c <= b'9'
 }
 
-pub fn solve(input: &str) -> (String, String) {
+pub fn solve(input: &str) -> (i32, i32) {
     let bytes = input.as_bytes();
     let w: i32 = bytes.iter().position(|&c| c == b'\n').unwrap() as i32 + 1; // include newline
 
@@ -97,5 +97,5 @@ pub fn solve(input: &str) -> (String, String) {
             }
         });
 
-    (p1.to_string(), p2.to_string())
+    (p1, p2)
 }

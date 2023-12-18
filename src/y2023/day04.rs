@@ -2,13 +2,13 @@ use hashbrown::{HashMap, HashSet};
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i32, i32> for Solution {
+    fn solve(&self, input: &str) -> (i32, i32) {
         solve(input)
     }
 }
 
-pub fn solve(input: &str) -> (String, String) {
+pub fn solve(input: &str) -> (i32, i32) {
     let mut map: HashMap<i32, i32> = HashMap::new();
 
     let (num_cards, sum) = input.lines().filter_map(|line| line.split_once(':')).fold(
@@ -33,10 +33,7 @@ pub fn solve(input: &str) -> (String, String) {
         },
     );
 
-    (
-        sum.to_string(),
-        (map.values().sum::<i32>() + num_cards).to_string(),
-    )
+    (sum, (map.values().sum::<i32>() + num_cards))
 }
 
 fn split_nums(s: &str) -> HashSet<i32> {

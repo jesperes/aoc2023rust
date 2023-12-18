@@ -2,9 +2,9 @@ use hashbrown::HashMap;
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
-        (solve_p1(input).to_string(), solve_p2(input).to_string())
+impl Solver<usize, usize> for Solution {
+    fn solve(&self, input: &str) -> (usize, usize) {
+        (solve_p1(input), solve_p2(input))
     }
 }
 

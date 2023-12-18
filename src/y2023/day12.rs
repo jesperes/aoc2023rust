@@ -3,17 +3,12 @@ use itertools::Itertools;
 
 use crate::Solver;
 pub struct Solution;
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
-        let (p1, p2) = solve(input);
-        (p1.to_string(), p2.to_string())
+impl Solver<i64, i64> for Solution {
+    fn solve(&self, input: &str) -> (i64, i64) {
+        let p1 = sum_arrangements(input, 1);
+        let p2 = sum_arrangements(input, 5);
+        (p1, p2)
     }
-}
-
-pub fn solve(input: &str) -> (i64, i64) {
-    let p1 = sum_arrangements(input, 1);
-    let p2 = sum_arrangements(input, 5);
-    (p1, p2)
 }
 
 trait Duplicatable {

@@ -2,8 +2,8 @@ use crate::Solver;
 use itertools::Itertools;
 pub struct Solution;
 
-impl Solver for Solution {
-    fn solve(&self, input: &str) -> (String, String) {
+impl Solver<i64, i64> for Solution {
+    fn solve(&self, input: &str) -> (i64, i64) {
         solve(input)
     }
 }
@@ -20,11 +20,11 @@ struct Range {
     to: i64,
 }
 
-pub fn solve(input: &str) -> (String, String) {
+pub fn solve(input: &str) -> (i64, i64) {
     (solve_p1(input), solve_p2(input))
 }
 
-pub fn solve_p1(input: &str) -> String {
+pub fn solve_p1(input: &str) -> i64 {
     let (seeds_str, maps_str) = input.split_once("\n\n").unwrap();
     let seeds = seeds_str
         .strip_prefix("seeds: ")
@@ -66,10 +66,9 @@ pub fn solve_p1(input: &str) -> String {
         })
         .min()
         .unwrap()
-        .to_string()
 }
 
-pub fn solve_p2(input: &str) -> String {
+pub fn solve_p2(input: &str) -> i64 {
     let (seeds_str, maps_str) = input.split_once("\n\n").unwrap();
     let seeds = seeds_str
         .strip_prefix("seeds: ")
@@ -162,10 +161,5 @@ pub fn solve_p2(input: &str) -> String {
         curr_ranges = new_ranges;
     }
 
-    curr_ranges
-        .iter()
-        .map(|range| range.from)
-        .min()
-        .unwrap()
-        .to_string()
+    curr_ranges.iter().map(|range| range.from).min().unwrap()
 }
