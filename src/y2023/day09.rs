@@ -40,7 +40,7 @@ fn predict_prev(seq: &Vec<i64>) -> i64 {
     }
 }
 
-fn next_seq(sequence: &Vec<i64>) -> Vec<i64> {
+fn next_seq(sequence: &[i64]) -> Vec<i64> {
     sequence
         .iter()
         .tuple_windows()
