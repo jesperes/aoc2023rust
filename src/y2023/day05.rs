@@ -1,8 +1,9 @@
 use crate::Solver;
 use itertools::Itertools;
 pub struct Solution;
+
 impl Solver for Solution {
-    fn solve(&self, input: &String) -> (String, String) {
+    fn solve(&self, input: &str) -> (String, String) {
         solve(input)
     }
 }

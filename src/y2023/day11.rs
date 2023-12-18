@@ -4,7 +4,7 @@ use hashbrown::HashSet;
 use itertools::Itertools;
 pub struct Solution;
 impl Solver for Solution {
-    fn solve(&self, input: &String) -> (String, String) {
+    fn solve(&self, input: &str) -> (String, String) {
         let (p1, p2) = solve(input);
         (p1.to_string(), p2.to_string())
     }

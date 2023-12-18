@@ -12,7 +12,7 @@ use rayon::{
 use crate::Solver;
 pub struct Solution;
 impl Solver for Solution {
-    fn solve(&self, input: &String) -> (String, String) {
+    fn solve(&self, input: &str) -> (String, String) {
         let (line1, rest) = input.split_once('\n').unwrap();
 
         let dirs = line1.as_bytes();

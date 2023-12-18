@@ -1,16 +1,14 @@
 #![feature(int_roundings)]
 
-use std::{
-    convert::identity,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
-use indicatif::{ProgressIterator, ProgressStyle};
+use indicatif::{MultiProgress, ProgressBar};
 
 use chrono::{Local, TimeZone};
 use chrono_tz::US::Eastern;
 use clap::Parser;
 use hashbrown::HashMap;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 extern crate lazy_static;
 
 mod aoc_fetcher;
@@ -36,7 +34,7 @@ pub type Years = HashMap<Year, YearSolvers>;
 // TODO convert this so that we can benchmark without converting to/from
 // strings
 pub trait Solver {
-    fn solve(&self, input: &String) -> (String, String);
+    fn solve(&self, input: &str) -> (String, String);
 }
 
 // Structs
@@ -94,38 +92,68 @@ struct Cli {
 
     #[arg(long, default_value_t = false, help = "Sort by time")]
     sort: bool,
+
+    #[arg(
+        short = 'p',
+        long,
+        default_value_t = false,
+        help = "Run solvers in parallel"
+    )]
+    parallel: bool,
 }
 
 fn main() {
     let args = Cli::parse();
-    let style = ProgressStyle::with_template(
-        "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",
-    )
-    .unwrap()
-    .progress_chars("##-");
-
-    let mut results = get_puzzles(&args)
-        .iter()
-        .progress_with_style(style)
-        .filter_map(|(y, d)| {
-            if let Some(solver) = lookup_solver(*y, *d) {
-                Some(invoke_solver(
-                    *y,
-                    *d,
-                    &aoc_fetcher::maybe_fetch_puzzle_data(*y, *d),
-                    &args,
-                    aoc_fetcher::maybe_fetch_puzzle_solutions(*y, *d),
-                    solver,
-                ))
-            } else {
-                println!("No solver defined for ({y}, {d})");
-                None
-            }
-        })
-        .collect::<Vec<_>>();
+    let days = get_puzzles(&args);
+    let mut results: Vec<PuzzleResult> = if args.parallel {
+        let m = MultiProgress::new();
+        let results = days
+            .into_par_iter()
+            .filter_map(|(y, d)| {
+                let spinner =
+                    m.add(ProgressBar::new_spinner().with_message(format!("Year {y} day {d}")));
+                let result = run_one_puzzle_with_progress(y, d, &args, &spinner);
+                spinner.finish_and_clear();
+                result
+            })
+            .collect::<Vec<_>>();
+        m.clear().unwrap();
+        results
+    } else {
+        let pb = ProgressBar::new_spinner();
+        let results = days
+            .into_iter()
+            .filter_map(|(y, d)| run_one_puzzle_with_progress(y, d, &args, &pb))
+            .collect::<Vec<_>>();
+        pb.finish_and_clear();
+        results
+    };
 
     let table = table::make_table(&mut results, &args);
     println!("{table}");
+}
+
+fn run_one_puzzle_with_progress(
+    y: Year,
+    d: Day,
+    args: &Cli,
+    m: &ProgressBar,
+) -> Option<PuzzleResult> {
+    m.set_message(format!("Year {y} day {d}"));
+    if let Some(solver) = lookup_solver(y, d) {
+        Some(invoke_solver(
+            y,
+            d,
+            &aoc_fetcher::maybe_fetch_puzzle_data(y, d),
+            args,
+            aoc_fetcher::maybe_fetch_puzzle_solutions(y, d),
+            solver,
+            m,
+        ))
+    } else {
+        println!("No solver defined for ({y}, {d})");
+        None
+    }
 }
 
 fn get_puzzles(args: &Cli) -> Vec<(Year, Day)> {
@@ -161,10 +189,11 @@ fn is_released(year: Year, day: Day) -> bool {
 fn invoke_solver(
     year: Year,
     day: Day,
-    input: &String,
+    input: &str,
     args: &Cli,
     correct: (Option<String>, Option<String>),
     solver: &dyn Solver,
+    pb: &ProgressBar,
 ) -> PuzzleResult {
     let mut actual = (String::new(), String::new());
     let elapsed: Duration;
@@ -172,7 +201,9 @@ fn invoke_solver(
     let start = Instant::now();
 
     if args.benchmark {
-        for _ in 0..args.max_iter {
+        for iter in 0..args.max_iter {
+            pb.set_message(format!("{year} day {day} (iteration {iter})"));
+            pb.enable_steady_tick(Duration::from_millis(100));
             actual = solver.solve(input);
             iters += 1;
             if start.elapsed().as_millis() > args.max_msecs as u128 {
@@ -185,6 +216,7 @@ fn invoke_solver(
         actual = solver.solve(input);
         elapsed = start.elapsed();
         iters = 1;
+        pb.tick();
     }
 
     PuzzleResult {

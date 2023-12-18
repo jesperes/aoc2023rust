@@ -15,7 +15,7 @@ enum HandType {
 }
 
 impl Solver for Solution {
-    fn solve(&self, input: &String) -> (String, String) {
+    fn solve(&self, input: &str) -> (String, String) {
         let p1 = find_total_winnings(
             input,
             &classify_hand,

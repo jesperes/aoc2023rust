@@ -4,7 +4,7 @@ use lazy_regex::regex;
 use crate::Solver;
 pub struct Solution;
 impl Solver for Solution {
-    fn solve(&self, input: &String) -> (String, String) {
+    fn solve(&self, input: &str) -> (String, String) {
         solve(input)
     }
 }
