@@ -217,7 +217,7 @@ fn lookup_solver(year: Year, day: Day) -> Option<&'static dyn Solver> {
         (2023, 15) => Some(&y2023::day15::Solution),
         (2023, 16) => Some(&y2023::day16::Solution),
         (2023, 17) => Some(&y2023::day17::Solution),
-        // (2023, 18) => Some(&y2023::day18::Solution),
+        (2023, 18) => Some(&y2023::day18::Solution),
         // (2023, 19) => Some(&y2023::day19::Solution),
         // (2023, 20) => Some(&y2023::day20::Solution),
         // (2023, 21) => Some(&y2023::day21::Solution),
