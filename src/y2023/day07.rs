@@ -24,13 +24,20 @@ impl Solver for Solution {
             ],
         );
 
-        (p1.to_string(), String::new())
+        let p2 = find_total_winnings(
+            input,
+            &classify_hand_with_jokers,
+            vec![
+                'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
+            ],
+        );
+        (p1.to_string(), p2.to_string())
     }
 }
 
 fn find_total_winnings(
     input: &str,
-    classify_fun: &dyn Fn(&str) -> HandType,
+    classify_fun: &dyn Fn(Vec<char>) -> HandType,
     card_order: Vec<char>,
 ) -> usize {
     let sort_keys = card_order
@@ -46,7 +53,7 @@ fn find_total_winnings(
         .map(|line| line.split_once(' ').unwrap())
         .map(|(hand, bid)| {
             (
-                classify_fun(hand),
+                classify_fun(hand.chars().collect_vec()),
                 sort_key(hand, &sort_keys),
                 bid.parse::<usize>().unwrap(),
             )
@@ -67,9 +74,9 @@ fn sort_key(hand: &str, sort_keys: &HashMap<char, usize>) -> (usize, usize, usiz
         .unwrap()
 }
 
-fn classify_hand(hand: &str) -> HandType {
+fn classify_hand(hand: Vec<char>) -> HandType {
     let mut map: HashMap<char, i32> = HashMap::new();
-    for c in hand.chars() {
+    for c in hand.into_iter() {
         *map.entry(c).or_insert(0) += 1;
     }
 
@@ -91,5 +98,30 @@ fn classify_hand(hand: &str) -> HandType {
         HandType::HighCard
     } else {
         unreachable!()
+    }
+}
+
+fn classify_hand_with_jokers(hand: Vec<char>) -> HandType {
+    hand.into_iter()
+        .map(|c| match c {
+            'J' => vec![
+                'A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J',
+            ],
+            _ => vec![c],
+        })
+        .multi_cartesian_product()
+        .fold(HandType::HighCard, |best, hand| {
+            classify_hand(hand).max(best)
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_jokers() {
+        let hand_type = classify_hand_with_jokers("AJJBC".chars().collect_vec());
+        assert_eq!(HandType::ThreeOfAKind, hand_type);
     }
 }
