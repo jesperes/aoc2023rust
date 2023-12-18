@@ -122,6 +122,7 @@ dependencies = [
  "itertools",
  "lazy-regex",
  "lazy_static",
+ "nd_vec",
  "num",
  "rayon",
  "regex",
@@ -871,6 +872,15 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "nd_vec"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "feb6d97b3da527dc7426d665f8e5e285d07783f8e4c624c8478ce4d63abd8d62"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
