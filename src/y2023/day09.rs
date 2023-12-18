@@ -20,11 +20,11 @@ impl Solver for Solution {
     }
 }
 
-fn do_solve(input: &[Vec<i64>], next_fun: &dyn Fn(&Vec<i64>) -> i64) -> i64 {
-    input.iter().map(next_fun).sum()
+fn do_solve(input: &[Vec<i64>], next_fun: &dyn Fn(&[i64]) -> i64) -> i64 {
+    input.iter().map(|s| next_fun(s)).sum()
 }
 
-fn predict_next(seq: &Vec<i64>) -> i64 {
+fn predict_next(seq: &[i64]) -> i64 {
     if seq.iter().all(|n| *n == 0) {
         0
     } else {
@@ -32,7 +32,7 @@ fn predict_next(seq: &Vec<i64>) -> i64 {
     }
 }
 
-fn predict_prev(seq: &Vec<i64>) -> i64 {
+fn predict_prev(seq: &[i64]) -> i64 {
     if seq.iter().all(|n| *n == 0) {
         0
     } else {
