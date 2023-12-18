@@ -15,12 +15,13 @@ fn solve_p1(input: &str) -> i64 {
         .map(|line| {
             let (dir, len) = line
                 .split(|c| c == ' ' || c == '(' || c == '#' || c == ')')
-                .filter(|s| s.len() > 0)
+                .filter(|s| !s.is_empty())
                 .next_tuple()
                 .unwrap();
             (dir.chars().next().unwrap(), len.parse().unwrap())
         })
         .collect();
+
     shoelace(instructions)
 }
 

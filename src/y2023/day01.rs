@@ -8,11 +8,11 @@ impl Solver for Solution {
     }
 }
 
-pub fn solve(input: &String) -> (String, String) {
+pub fn solve(input: &str) -> (String, String) {
     let (p1, p2) = input
         .lines()
         .map(|line| line.as_bytes())
-        .filter(|s| s.len() > 0)
+        .filter(|s| !s.is_empty())
         .fold((0, 0), |(p1, p2), line| {
             (
                 p1 + get_first_last(line, is_digit1),
@@ -33,7 +33,8 @@ fn get_first_last(line: &[u8], is_digit: IsDigitFun) -> i32 {
 
 fn is_digit1(line: &[u8], i: usize) -> Option<i32> {
     let c = line[i];
-    if c >= b'0' && c <= b'9' {
+    if c.is_ascii_digit() {
+        //if c >= b'0' && c <= b'9' {
         Some(c as i32 - '0' as i32)
     } else {
         None

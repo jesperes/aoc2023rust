@@ -1,5 +1,4 @@
 use hashbrown::{HashMap, HashSet};
-use std::convert::identity;
 
 use crate::Solver;
 pub struct Solution;
@@ -12,12 +11,9 @@ impl Solver for Solution {
 pub fn solve(input: &str) -> (String, String) {
     let mut map: HashMap<i32, i32> = HashMap::new();
 
-    let (num_cards, sum) = input
-        .lines()
-        .into_iter()
-        .map(|line| line.split_once(':'))
-        .filter_map(identity)
-        .fold((0, 0), |(n, sum), (left, right)| {
+    let (num_cards, sum) = input.lines().filter_map(|line| line.split_once(':')).fold(
+        (0, 0),
+        |(n, sum), (left, right)| {
             let card_num = left[4..].trim().parse::<i32>().unwrap();
             let (s1, s2) = right.split_once('|').unwrap();
             let num_matching = split_nums(s1).intersection(&split_nums(s2)).count() as i32;
@@ -34,7 +30,8 @@ pub fn solve(input: &str) -> (String, String) {
                 };
 
             (n + 1, sum0)
-        });
+        },
+    );
 
     (
         sum.to_string(),
@@ -45,7 +42,7 @@ pub fn solve(input: &str) -> (String, String) {
 fn split_nums(s: &str) -> HashSet<i32> {
     s.split(' ')
         .map(|s| s.trim())
-        .filter(|s| s.len() > 0)
+        .filter(|s| !s.is_empty())
         .map(|s| s.parse().unwrap())
         .collect()
 }

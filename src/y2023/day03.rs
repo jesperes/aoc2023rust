@@ -55,7 +55,7 @@ pub fn solve(input: &str) -> (String, String) {
         // loop through the digits
         for i_unsigned in *start..(start + len) {
             let i = i_unsigned as i32;
-            for adjidx in vec![
+            for adjidx in [
                 i - 1,
                 i + 1,
                 i - w - 1,
@@ -71,7 +71,7 @@ pub fn solve(input: &str) -> (String, String) {
                         continue;
                     } else {
                         map.entry((adjidx as usize, c as char))
-                            .or_insert_with(|| HashSet::new())
+                            .or_default()
                             .insert((*start, *num));
                     }
                 }

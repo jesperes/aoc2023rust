@@ -26,8 +26,8 @@ impl Solver for Solution {
         }
 
         (
-            solve_p1(&map, &dirs).to_string(),
-            solve_p2(&map, &dirs).to_string(),
+            solve_p1(&map, dirs).to_string(),
+            solve_p2(&map, dirs).to_string(),
         )
     }
 }
@@ -79,5 +79,5 @@ fn solve_p2(map: &HashMap<&str, (&str, &str)>, dirs: &[u8]) -> i64 {
                 .into_inner();
             count
         })
-        .reduce(|| 1, |a, b| num::integer::lcm(a, b))
+        .reduce(|| 1, num::integer::lcm)
 }

@@ -73,12 +73,7 @@ fn classify_hand(hand: &str) -> HandType {
         *map.entry(c).or_insert(0) += 1;
     }
 
-    let vec = map
-        .values()
-        .sorted()
-        .rev()
-        .map(|n| *n)
-        .collect::<Vec<i32>>();
+    let vec: Vec<i32> = map.values().sorted().rev().copied().collect();
 
     if let Some((5,)) = vec.iter().next_tuple() {
         HandType::FiveOfAKind

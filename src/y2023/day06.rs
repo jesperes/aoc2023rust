@@ -42,7 +42,7 @@ fn get_nums(line: &str) -> Vec<i64> {
     line[12..]
         .split(' ')
         .map(|s| s.trim())
-        .filter(|s| s.len() > 0)
+        .filter(|s| !s.is_empty())
         .map(|s| s.parse::<i64>().unwrap())
         .collect_vec()
 }
@@ -50,8 +50,8 @@ fn get_nums(line: &str) -> Vec<i64> {
 fn find_holdtime(time: i64, record: i64) -> i64 {
     let b = -time as f64;
     let c = record as f64;
-    let sq = ((b * b - 4f64 * c) as f64).sqrt();
-    let x0 = (-b - sq) as f64 / 2f64;
-    let x1 = (-b + sq) as f64 / 2f64;
+    let sq = (b * b - 4f64 * c).sqrt();
+    let x0 = (-b - sq) / 2f64;
+    let x1 = (-b + sq) / 2f64;
     (x1.floor() - x0.floor()) as i64
 }

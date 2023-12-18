@@ -20,7 +20,7 @@ struct Range {
 }
 
 pub fn solve(input: &str) -> (String, String) {
-    (solve_p1(&input), solve_p2(&input))
+    (solve_p1(input), solve_p2(input))
 }
 
 pub fn solve_p1(input: &str) -> String {
@@ -38,7 +38,7 @@ pub fn solve_p1(input: &str) -> String {
                 .lines()
                 .skip(1)
                 .map(|line| {
-                    let mut nums = line.splitn(3, " ");
+                    let mut nums = line.splitn(3, ' ');
                     Rule {
                         destination: nums.next().unwrap().parse().unwrap(),
                         source: nums.next().unwrap().parse().unwrap(),
@@ -93,7 +93,7 @@ pub fn solve_p2(input: &str) -> String {
                 .lines()
                 .skip(1)
                 .map(|line| {
-                    let mut nums = line.splitn(3, " ");
+                    let mut nums = line.splitn(3, ' ');
                     Rule {
                         destination: nums.next().unwrap().parse().unwrap(),
                         source: nums.next().unwrap().parse().unwrap(),

@@ -87,7 +87,7 @@ struct Cli {
 
     #[arg(
         long,
-        default_value_t = 50,
+        default_value_t = 5000,
         help = "Maximum number of msecs/puzzle to run (when benchmarking)"
     )]
     max_msecs: u32,

@@ -21,7 +21,7 @@ impl Solver for Solution {
 }
 
 fn do_solve(input: &Vec<Vec<i64>>, next_fun: &dyn Fn(&Vec<i64>) -> i64) -> i64 {
-    input.iter().map(|seq| next_fun(&seq)).sum()
+    input.iter().map(next_fun).sum()
 }
 
 fn predict_next(seq: &Vec<i64>) -> i64 {
