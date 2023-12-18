@@ -107,7 +107,7 @@ fn main() {
     let mut results = get_puzzles(&args)
         .iter()
         .progress_with_style(style)
-        .map(|(y, d)| {
+        .filter_map(|(y, d)| {
             if let Some(solver) = lookup_solver(*y, *d) {
                 Some(invoke_solver(
                     *y,
@@ -122,7 +122,6 @@ fn main() {
                 None
             }
         })
-        .filter_map(identity)
         .collect::<Vec<_>>();
 
     let table = table::make_table(&mut results, &args);

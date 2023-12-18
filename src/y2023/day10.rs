@@ -42,7 +42,7 @@ pub fn solve(input: &str) -> (i32, i32) {
 fn solve_p1(start: &RowCol, map: &HashMap<RowCol, char>) -> (i32, HashSet<RowCol>) {
     let mut mainloop: HashSet<RowCol> = HashSet::new();
     let mut prev = *start;
-    let (pipe1, _) = connecting_pipes(&start, &map);
+    let (pipe1, _) = connecting_pipes(start, map);
     let mut curr = pipe1;
     let mut steps = 1;
 
@@ -50,7 +50,7 @@ fn solve_p1(start: &RowCol, map: &HashMap<RowCol, char>) -> (i32, HashSet<RowCol
     mainloop.insert(curr.1);
 
     while curr.0 != *start {
-        let (next1, next2) = connecting_pipes(&curr.0, &map);
+        let (next1, next2) = connecting_pipes(&curr.0, map);
 
         assert!(next1.0 .0 % 2 == 0);
         assert!(next2.0 .1 % 2 == 0);
@@ -100,7 +100,7 @@ fn solve_p2(start: &RowCol, limits: &(i32, i32), mainloop: &HashSet<RowCol>) -> 
     let mut inner = 0;
     for row in (0..=*maxrow).step_by(2) {
         for col in (0..=*maxcol).step_by(2) {
-            let rowcol = (row as i32, col as i32);
+            let rowcol = (row, col);
             if outer.contains(&rowcol) || mainloop.contains(&rowcol) {
                 continue;
             } else {

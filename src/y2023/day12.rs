@@ -100,5 +100,5 @@ fn get_count(
     };
 
     cache.insert(key, result);
-    return result;
+    result
 }

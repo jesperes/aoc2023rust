@@ -23,13 +23,13 @@ fn solve_p1(input: &str) -> i32 {
 fn solve_p2(input: &str) -> usize {
     let mut boxes: Vec<Vec<(String, usize)>> = Vec::new();
     let mut lenses: HashMap<String, (usize, usize)> = HashMap::new();
-    boxes.resize_with(256, || Vec::new());
+    boxes.resize_with(256, Vec::new);
 
     for s in input.split(',').map(|s| s.trim()) {
         let (label, cmd) = s.split_once(|c| c == '=' || c == '-').unwrap();
         let h = hash(label) as usize;
 
-        if cmd == "" {
+        if cmd.is_empty() {
             // remove lens
             boxes[h].retain(|(l, _)| l != label);
             lenses.remove(label);

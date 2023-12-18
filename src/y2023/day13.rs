@@ -39,14 +39,12 @@ fn summarize(grid: &str, smudges: u32) -> usize {
 
     (1..cols.len())
         // has vertical reflection?
-        .filter(|c| mirrors(&cols, *c, smudges))
-        .next()
+        .find(|c| mirrors(&cols, *c, smudges))
         .or_else(|| {
             // if not, check horizontal reflection and multiply by 100
             Some(
                 (1..rows.len())
-                    .filter(|r| mirrors(&rows, *r, smudges))
-                    .next()
+                    .find(|r| mirrors(&rows, *r, smudges))
                     .unwrap_or(0)
                     * 100,
             )
