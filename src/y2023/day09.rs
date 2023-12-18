@@ -20,7 +20,7 @@ impl Solver for Solution {
     }
 }
 
-fn do_solve(input: &Vec<Vec<i64>>, next_fun: &dyn Fn(&Vec<i64>) -> i64) -> i64 {
+fn do_solve(input: &[Vec<i64>], next_fun: &dyn Fn(&Vec<i64>) -> i64) -> i64 {
     input.iter().map(next_fun).sum()
 }
 
