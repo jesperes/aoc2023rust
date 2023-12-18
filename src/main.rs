@@ -89,7 +89,7 @@ struct Cli {
 
     #[arg(
         long,
-        default_value_t = 100,
+        default_value_t = 1000,
         help = "Maximum number of iteration (when benchmarking)"
     )]
     max_iter: u32,

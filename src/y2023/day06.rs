@@ -1,57 +1,40 @@
-use itertools::Itertools;
-
 use crate::Solver;
 pub struct Solution;
-impl Solver<i64, i64> for Solution {
-    fn solve(&self, input: &str) -> (i64, i64) {
-        solve(input)
+impl Solver<u64, u64> for Solution {
+    fn solve(&self, input: &str) -> (u64, u64) {
+        let mut lines = input.lines();
+        let times = lines.next().unwrap();
+        let dists = lines.next().unwrap();
+        (solve_p1(times, dists), solve_p2(times, dists))
     }
 }
 
-pub fn solve(input: &str) -> (i64, i64) {
-    let (times, dists) = input.split_once('\n').unwrap();
-    let p1 = solve_p1(times, dists);
-    let p2 = solve_p2(times, dists);
-    (p1, p2)
+fn solve_p1(times: &str, dists: &str) -> u64 {
+    times
+        .split_whitespace()
+        .zip(dists.split_whitespace())
+        .skip(1)
+        .map(|(t, d)| (t.parse().unwrap(), d.parse().unwrap()))
+        .fold(1, |acc, (time, dist)| acc * find_holdtime(time, dist))
 }
 
-fn solve_p1(times: &str, dists: &str) -> i64 {
-    let time_nums = get_nums(times);
-    let dist_nums = get_nums(dists);
-    time_nums
-        .iter()
-        .zip(dist_nums.iter())
-        .fold(1, |acc, (time, record)| acc * find_holdtime(*time, *record))
-}
-
-fn solve_p2(times: &str, dists: &str) -> i64 {
-    let time = get_num(times);
-    let dist = get_num(dists);
+fn solve_p2(times: &str, dists: &str) -> u64 {
+    let time = parse_number_with_spaces(&times[10..]);
+    let dist = parse_number_with_spaces(&dists[10..]);
     find_holdtime(time, dist)
 }
 
-fn get_num(line: &str) -> i64 {
-    line[12..]
-        .chars()
-        .filter(|s| s.is_numeric())
-        .collect::<String>()
-        .parse::<i64>()
-        .unwrap()
-}
-fn get_nums(line: &str) -> Vec<i64> {
-    line[12..]
-        .split(' ')
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .map(|s| s.parse::<i64>().unwrap())
-        .collect_vec()
+fn parse_number_with_spaces(input: &str) -> u64 {
+    input
+        .bytes()
+        .filter(|&c| c != b' ')
+        .fold(0, |acc, x| acc * 10 + (x - b'0') as u64)
 }
 
-fn find_holdtime(time: i64, record: i64) -> i64 {
-    let b = -time as f64;
-    let c = record as f64;
-    let sq = (b * b - 4f64 * c).sqrt();
-    let x0 = (-b - sq) / 2f64;
-    let x1 = (-b + sq) / 2f64;
-    (x1.floor() - x0.floor()) as i64
+fn find_holdtime(time: u64, distance: u64) -> u64 {
+    let d = ((time * time - 4 * distance) as f64).sqrt();
+    let t = time as f64;
+    let x0 = ((t - d) / 2.0).ceil() as u64;
+    let x1 = ((t + d) / 2.0).floor() as u64;
+    x1 - x0 + 1
 }
