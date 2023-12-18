@@ -21,7 +21,6 @@ fn solve_p1(input: &str) -> i64 {
             (dir.chars().next().unwrap(), len.parse().unwrap())
         })
         .collect();
-
     shoelace(instructions)
 }
 
@@ -53,10 +52,10 @@ fn shoelace(instructions: Vec<(char, i64)>) -> i64 {
 
     for (dir, steps) in instructions {
         let vector = match dir {
-            'U' => vector!(0, -1),
+            'R' => vector!(1, 0),
             'D' => vector!(0, 1),
             'L' => vector!(-1, 0),
-            'R' => vector!(1, 0),
+            'U' => vector!(0, -1),
             _ => unreachable!(),
         };
 
