@@ -120,7 +120,7 @@ fn get_category_range(cat: &str, ranges: Ranges) -> Range {
     }
 }
 
-fn set_category_range(cat: &str, ranges: Ranges, new_range: Range) -> Ranges {
+fn set_cat_range(cat: &str, ranges: Ranges, new_range: Range) -> Ranges {
     let (x, m, a, s) = ranges;
     match cat {
         "x" => (new_range, m, a, s),
@@ -138,62 +138,39 @@ fn process_workflow2(name: &str, ranges: Ranges, workflows: &HashMap<&str, Vec<R
         let m = m1 - m0 + 1;
         let a = a1 - a0 + 1;
         let s = s1 - s0 + 1;
-        println!(
-            "Reached accept state with ranges {:?} -> {:?} == {:?}",
-            ranges,
-            (x, m, a, s),
-            x * m * a * s
-        );
         return x * m * a * s;
     } else if name == "R" {
         return 0;
     }
 
-    let wf = workflows.get(name).unwrap();
-    wf.iter()
-        .fold((0, ranges), |(n, ranges), rule| {
-            println!("Processing rule {:?}", rule);
-            match rule {
-                Rule::Lt(cat, val, dest) => {
-                    let (min, max) = get_category_range(cat, ranges);
-                    if *val <= min {
-                        // This rule can not apply for any ranges of values for
-                        // x, m, a, and s.
-                        (n, ranges)
-                    } else {
-                        // For the range of number making this condition true,
-                        // recurse down and investigate other workflows
-                        let true_ranges = set_category_range(cat, ranges, (min, val - 1));
-                        let count = process_workflow2(dest, true_ranges, workflows);
-
-                        // The resulting range for this condition being false is passed to the
-                        // next iteration in the loop.
-                        let false_ranges = set_category_range(cat, ranges, (*val, max));
-
-                        (n + count, false_ranges)
-                    }
+    workflows
+        .get(name)
+        .unwrap()
+        .iter()
+        .fold((0, ranges), |(n, ranges), rule| match rule {
+            Rule::Lt(cat, val, dest) => {
+                let (min, max) = get_category_range(cat, ranges);
+                if *val <= min {
+                    (n, ranges)
+                } else {
+                    let true_ranges = set_cat_range(cat, ranges, (min, val - 1));
+                    let count = process_workflow2(dest, true_ranges, workflows);
+                    let false_ranges = set_cat_range(cat, ranges, (*val, max));
+                    (n + count, false_ranges)
                 }
-                Rule::Gt(cat, val, dest) => {
-                    let (min, max) = get_category_range(cat, ranges);
-                    if *val >= max {
-                        // This rule can not apply for any ranges of values for
-                        // x, m, a, and s.
-                        (n, ranges)
-                    } else {
-                        // For the range of number making this condition true,
-                        // recurse down and investigate other workflows
-                        let true_ranges = set_category_range(cat, ranges, (val + 1, max));
-                        let count = process_workflow2(dest, true_ranges, workflows);
-
-                        // The resulting range for this condition being false is passed to the
-                        // next iteration in the loop.
-                        let false_ranges = set_category_range(cat, ranges, (min, *val));
-
-                        (n + count, false_ranges)
-                    }
-                }
-                Rule::Default(dest) => (n + process_workflow2(dest, ranges, workflows), ranges),
             }
+            Rule::Gt(cat, val, dest) => {
+                let (min, max) = get_category_range(cat, ranges);
+                if *val >= max {
+                    (n, ranges)
+                } else {
+                    let true_ranges = set_cat_range(cat, ranges, (val + 1, max));
+                    let count = process_workflow2(dest, true_ranges, workflows);
+                    let false_ranges = set_cat_range(cat, ranges, (min, *val));
+                    (n + count, false_ranges)
+                }
+            }
+            Rule::Default(dest) => (n + process_workflow2(dest, ranges, workflows), ranges),
         })
         .0
 }
