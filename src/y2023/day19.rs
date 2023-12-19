@@ -154,8 +154,8 @@ fn process_workflow2(name: &str, ranges: Ranges, workflows: &HashMap<&str, Vec<R
                     (n, ranges)
                 } else {
                     let true_ranges = set_cat_range(cat, ranges, (min, val - 1));
-                    let count = process_workflow2(dest, true_ranges, workflows);
                     let false_ranges = set_cat_range(cat, ranges, (*val, max));
+                    let count = process_workflow2(dest, true_ranges, workflows);
                     (n + count, false_ranges)
                 }
             }
@@ -165,8 +165,8 @@ fn process_workflow2(name: &str, ranges: Ranges, workflows: &HashMap<&str, Vec<R
                     (n, ranges)
                 } else {
                     let true_ranges = set_cat_range(cat, ranges, (val + 1, max));
-                    let count = process_workflow2(dest, true_ranges, workflows);
                     let false_ranges = set_cat_range(cat, ranges, (min, *val));
+                    let count = process_workflow2(dest, true_ranges, workflows);
                     (n + count, false_ranges)
                 }
             }

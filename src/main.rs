@@ -3,6 +3,8 @@ use chrono::{Local, TimeZone};
 use chrono_tz::US::Eastern;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar};
+use itertools::FoldWhile::{Continue, Done};
+use itertools::Itertools;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::{
     fmt::Display,
@@ -121,12 +123,10 @@ fn main() {
         let results = days
             .into_par_iter()
             .filter_map(|puzzle_info| {
-                let spinner = m.add(
-                    ProgressBar::new_spinner()
-                        .with_message(format!("Year {} day {}", puzzle_info.year, puzzle_info.day)),
-                );
-                let result = run_one_puzzle_with_progress(&puzzle_info, &args);
-                spinner.finish_and_clear();
+                let pb = m.add(ProgressBar::new_spinner());
+                pb.enable_steady_tick(Duration::from_millis(150));
+                let result = run_one_puzzle_with_progress(&puzzle_info, &args, &pb);
+                pb.finish_and_clear();
                 result.map(|result| PuzzleRun {
                     info: puzzle_info,
                     result,
@@ -137,10 +137,11 @@ fn main() {
         results
     } else {
         let pb = ProgressBar::new_spinner();
+        pb.enable_steady_tick(Duration::from_millis(150));
         let results = days
             .into_iter()
             .filter_map(|puzzle_info| {
-                run_one_puzzle_with_progress(&puzzle_info, &args).map(|result| PuzzleRun {
+                run_one_puzzle_with_progress(&puzzle_info, &args, &pb).map(|result| PuzzleRun {
                     info: puzzle_info,
                     result,
                 })
@@ -196,27 +197,37 @@ fn is_released(year: Year, day: Day) -> bool {
             .unwrap()
 }
 
-fn run_one_puzzle_with_progress(puzzle_info: &PuzzleInfo, args: &Cli) -> Option<PuzzleResult> {
-    match (puzzle_info.year, puzzle_info.day) {
-        (2023, 1) => Some(run_with_types(puzzle_info, args, &y2023::day01::Solution)),
-        (2023, 2) => Some(run_with_types(puzzle_info, args, &y2023::day02::Solution)),
-        (2023, 3) => Some(run_with_types(puzzle_info, args, &y2023::day03::Solution)),
-        (2023, 4) => Some(run_with_types(puzzle_info, args, &y2023::day04::Solution)),
-        (2023, 5) => Some(run_with_types(puzzle_info, args, &y2023::day05::Solution)),
-        (2023, 6) => Some(run_with_types(puzzle_info, args, &y2023::day06::Solution)),
-        (2023, 7) => Some(run_with_types(puzzle_info, args, &y2023::day07::Solution)),
-        (2023, 8) => Some(run_with_types(puzzle_info, args, &y2023::day08::Solution)),
-        (2023, 9) => Some(run_with_types(puzzle_info, args, &y2023::day09::Solution)),
-        (2023, 10) => Some(run_with_types(puzzle_info, args, &y2023::day10::Solution)),
-        (2023, 11) => Some(run_with_types(puzzle_info, args, &y2023::day11::Solution)),
-        (2023, 12) => Some(run_with_types(puzzle_info, args, &y2023::day12::Solution)),
-        (2023, 13) => Some(run_with_types(puzzle_info, args, &y2023::day13::Solution)),
-        (2023, 14) => Some(run_with_types(puzzle_info, args, &y2023::day14::Solution)),
-        (2023, 15) => Some(run_with_types(puzzle_info, args, &y2023::day15::Solution)),
-        (2023, 16) => Some(run_with_types(puzzle_info, args, &y2023::day16::Solution)),
-        (2023, 17) => Some(run_with_types(puzzle_info, args, &y2023::day17::Solution)),
-        (2023, 18) => Some(run_with_types(puzzle_info, args, &y2023::day18::Solution)),
-        (2023, 19) => Some(run_with_types(puzzle_info, args, &y2023::day19::Solution)),
+fn run_one_puzzle_with_progress(
+    pi: &PuzzleInfo,
+    args: &Cli,
+    pb: &ProgressBar,
+) -> Option<PuzzleResult> {
+    match (pi.year, pi.day) {
+        (2023, 1) => Some(run_with_types(pi, args, pb, &y2023::day01::Solution)),
+        (2023, 2) => Some(run_with_types(pi, args, pb, &y2023::day02::Solution)),
+        (2023, 3) => Some(run_with_types(pi, args, pb, &y2023::day03::Solution)),
+        (2023, 4) => Some(run_with_types(pi, args, pb, &y2023::day04::Solution)),
+        (2023, 5) => Some(run_with_types(pi, args, pb, &y2023::day05::Solution)),
+        (2023, 6) => Some(run_with_types(pi, args, pb, &y2023::day06::Solution)),
+        (2023, 7) => Some(run_with_types(pi, args, pb, &y2023::day07::Solution)),
+        (2023, 8) => Some(run_with_types(pi, args, pb, &y2023::day08::Solution)),
+        (2023, 9) => Some(run_with_types(pi, args, pb, &y2023::day09::Solution)),
+        (2023, 10) => Some(run_with_types(pi, args, pb, &y2023::day10::Solution)),
+        (2023, 11) => Some(run_with_types(pi, args, pb, &y2023::day11::Solution)),
+        (2023, 12) => Some(run_with_types(pi, args, pb, &y2023::day12::Solution)),
+        (2023, 13) => Some(run_with_types(pi, args, pb, &y2023::day13::Solution)),
+        (2023, 14) => Some(run_with_types(pi, args, pb, &y2023::day14::Solution)),
+        (2023, 15) => Some(run_with_types(pi, args, pb, &y2023::day15::Solution)),
+        (2023, 16) => Some(run_with_types(pi, args, pb, &y2023::day16::Solution)),
+        (2023, 17) => Some(run_with_types(pi, args, pb, &y2023::day17::Solution)),
+        (2023, 18) => Some(run_with_types(pi, args, pb, &y2023::day18::Solution)),
+        (2023, 19) => Some(run_with_types(pi, args, pb, &y2023::day19::Solution)),
+        // (2023, 20) => Some(run_with_types(pi, args, pb, &y2023::day20::Solution)),
+        // (2023, 21) => Some(run_with_types(pi, args, pb, &y2023::day21::Solution)),
+        // (2023, 22) => Some(run_with_types(pi, args, pb, &y2023::day22::Solution)),
+        // (2023, 23) => Some(run_with_types(pi, args, pb, &y2023::day23::Solution)),
+        // (2023, 24) => Some(run_with_types(pi, args, pb, &y2023::day24::Solution)),
+        // (2023, 25) => Some(run_with_types(pi, args, pb, &y2023::day25::Solution)),
         _ => None,
     }
 }
@@ -224,6 +235,7 @@ fn run_one_puzzle_with_progress(puzzle_info: &PuzzleInfo, args: &Cli) -> Option<
 fn run_with_types<T1, T2>(
     puzzle_info: &PuzzleInfo,
     args: &Cli,
+    pb: &ProgressBar,
     sol2: &dyn Solver<T1, T2>,
 ) -> PuzzleResult
 where
@@ -231,22 +243,37 @@ where
     T2: Display + Default,
 {
     let actual: ((T1, T2), Duration, u32) = if args.benchmark {
+        let maxduration = Duration::from_millis(args.max_msecs as u64);
         let t0 = Instant::now();
-        (0..args.max_iter).fold(
-            ((T1::default(), T2::default()), Duration::ZERO, 0),
-            |acc, _iter| {
-                let t = Instant::now();
-                // Short-circuit remaining iterations if we have exceeded the time limit.
-                if t0.elapsed().as_millis() > args.max_msecs as u128 {
-                    acc
-                } else {
-                    let (_, dur, iters) = acc;
-                    let actual: (T1, T2) = sol2.solve(puzzle_info.input.as_str());
-                    (actual, dur + t.elapsed(), iters + 1)
-                }
-            },
-        )
+        (0..args.max_iter)
+            .fold_while(
+                ((T1::default(), T2::default()), Duration::ZERO, 0),
+                |acc, iter| {
+                    let elapsed = t0.elapsed();
+                    let remaining_duration = if t0.elapsed() > maxduration {
+                        Duration::ZERO
+                    } else {
+                        maxduration - elapsed
+                    };
+                    pb.set_message(format!(
+                        "Year {} day {:2} (iteration {:4}/{:4}, remaining {:?})",
+                        puzzle_info.year, puzzle_info.day, iter, args.max_iter, remaining_duration
+                    ));
+
+                    let t = Instant::now();
+                    // Short-circuit remaining iterations if we have exceeded the time limit.
+                    if t0.elapsed().as_millis() > args.max_msecs as u128 {
+                        Done(acc)
+                    } else {
+                        let (_, dur, iters) = acc;
+                        let actual: (T1, T2) = sol2.solve(puzzle_info.input.as_str());
+                        Continue((actual, dur + t.elapsed(), iters + 1))
+                    }
+                },
+            )
+            .into_inner()
     } else {
+        pb.set_message(format!("Year {} day {}", puzzle_info.year, puzzle_info.day));
         let t = Instant::now();
         let actual = sol2.solve(puzzle_info.input.as_str());
         (actual, t.elapsed(), 1)
