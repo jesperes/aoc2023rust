@@ -216,6 +216,7 @@ fn run_one_puzzle_with_progress(puzzle_info: &PuzzleInfo, args: &Cli) -> Option<
         (2023, 16) => Some(run_with_types(puzzle_info, args, &y2023::day16::Solution)),
         (2023, 17) => Some(run_with_types(puzzle_info, args, &y2023::day17::Solution)),
         (2023, 18) => Some(run_with_types(puzzle_info, args, &y2023::day18::Solution)),
+        (2023, 19) => Some(run_with_types(puzzle_info, args, &y2023::day19::Solution)),
         _ => None,
     }
 }
