@@ -222,7 +222,7 @@ fn run_one_puzzle_with_progress(
         (2023, 17) => Some(run_with_types(pi, args, pb, &y2023::day17::Solution)),
         (2023, 18) => Some(run_with_types(pi, args, pb, &y2023::day18::Solution)),
         (2023, 19) => Some(run_with_types(pi, args, pb, &y2023::day19::Solution)),
-        // (2023, 20) => Some(run_with_types(pi, args, pb, &y2023::day20::Solution)),
+        (2023, 20) => Some(run_with_types(pi, args, pb, &y2023::day20::Solution)),
         // (2023, 21) => Some(run_with_types(pi, args, pb, &y2023::day21::Solution)),
         // (2023, 22) => Some(run_with_types(pi, args, pb, &y2023::day22::Solution)),
         // (2023, 23) => Some(run_with_types(pi, args, pb, &y2023::day23::Solution)),
@@ -256,18 +256,20 @@ where
                         maxduration - elapsed
                     };
                     pb.set_message(format!(
-                        "Year {} day {:2} (iteration {:4}/{:4}, remaining {:?})",
+                        "Year {} day {:2} \u{1f501}{:4}/{:4} {:?}",
                         puzzle_info.year, puzzle_info.day, iter, args.max_iter, remaining_duration
                     ));
 
-                    let t = Instant::now();
                     // Short-circuit remaining iterations if we have exceeded the time limit.
                     if t0.elapsed().as_millis() > args.max_msecs as u128 {
                         Done(acc)
                     } else {
                         let (_, dur, iters) = acc;
-                        let actual: (T1, T2) = sol2.solve(puzzle_info.input.as_str());
-                        Continue((actual, dur + t.elapsed(), iters + 1))
+                        let input = puzzle_info.input.as_str();
+                        let t = Instant::now();
+                        let actual: (T1, T2) = sol2.solve(input);
+                        let elapsed = t.elapsed();
+                        Continue((actual, dur + elapsed, iters + 1))
                     }
                 },
             )
