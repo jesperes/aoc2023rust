@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 use hashbrown::{HashMap, HashSet};
+use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
 
 use crate::Solver;
 pub struct Solution;
@@ -60,7 +61,6 @@ fn bfs(grid: &(HashMap<RowCol, char>, RowCol, RowCol), max_depth: i64) -> i64 {
     queue.push_back((0, *start));
 
     while let Some((depth, pos)) = queue.pop_front() {
-        // println!("{i} pos={:?} depth={:?} max_depth={max_depth}", pos, depth);
         if depth > max_depth {
             break;
         } else if visited.contains(&pos) {
@@ -79,14 +79,11 @@ fn bfs(grid: &(HashMap<RowCol, char>, RowCol, RowCol), max_depth: i64) -> i64 {
             (row + 1, col),
         ]
         .iter()
-        .filter(|nbr| {
-            let (nbr_row, nbr_col) = nbr;
-            let nbr_pos = (nbr_row.rem_euclid(*rows), nbr_col.rem_euclid(*cols));
-            let (r, c) = nbr_pos;
-            assert!(r >= 0 && c >= 0 && r < *rows && c < *cols);
-            !visited.contains(*nbr) && map.get(&nbr_pos).unwrap() != &'#'
+        .filter(|(r, c)| {
+            let p = (r.rem_euclid(*rows), c.rem_euclid(*cols));
+            !visited.contains(&(*r, *c)) && map.get(&p).unwrap() != &'#'
         })
-        .for_each(|nbr_pos| queue.push_back((depth + 1, *nbr_pos)));
+        .for_each(|&nbr| queue.push_back((depth + 1, nbr)));
     }
 
     total
@@ -104,20 +101,23 @@ fn solve_p2(grid: &(HashMap<RowCol, char>, RowCol, RowCol)) -> i64 {
     let constant = 26501365;
     let modulo = constant % rows;
 
-    let a = bfs(grid, modulo);
-    let b = bfs(grid, modulo + rows);
-    let c = bfs(grid, modulo + 2 * rows);
-
-    let first_diff1 = b - a;
-    let first_diff2 = c - b;
-    let second_diff = first_diff2 - first_diff1;
+    // We do three separate bfs searches to different depths, to get the inputs
+    // to feed into the quadratic sequence formula. These can be performed in
+    // parallel, but make sure we collect the results in correct order.
+    let mut v = (0..3)
+        .zip([modulo, modulo + rows, modulo + 2 * rows].iter())
+        .par_bridge()
+        .into_par_iter()
+        .map(|(_, modulo)| bfs(grid, *modulo))
+        .collect::<Vec<_>>();
+    v.sort();
 
     // https://www.radfordmathematics.com/algebra/sequences-series/difference-method-sequences/quadratic-sequences.html
-    let a0 = second_diff.div_floor(2);
-    let b0 = first_diff1 - 3 * a0;
-    let c0 = a - b0 - a0;
+    let d1 = v[1] - v[0];
+    let a0 = ((v[2] - v[1]) - d1) >> 1;
+    let b0 = d1 - 3 * a0;
     let x = constant.div_ceil(*rows);
-    a0 * (x * x) + b0 * x + c0
+    a0 * (x * x) + b0 * x + (v[0] - b0 - a0)
 }
 
 #[test]
