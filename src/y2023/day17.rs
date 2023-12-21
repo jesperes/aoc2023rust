@@ -16,14 +16,12 @@ impl Solver<usize, usize> for Solution {
 
 type RowCol = (i32, i32);
 
-#[derive(PartialEq, Clone, Copy, Eq, PartialOrd, Ord, Hash)]
-enum Dir {
-    Up,
-    Left,
-    Down,
-    Right,
-    Unspecified,
-}
+type Dir = u8;
+const UP: u8 = 1;
+const LEFT: u8 = 2;
+const RIGHT: u8 = 3;
+const DOWN: u8 = 4;
+const UNSPECIFIED: u8 = 5;
 
 struct Config {
     // Maximum number of steps in a straight line before we must turn
@@ -55,9 +53,9 @@ impl<'a> HeatMap<'a> {
     }
 
     /// Returns the heat loss at a given position
-    fn heat_loss(&self, pos: RowCol) -> u8 {
+    fn heat_loss(&self, pos: RowCol) -> i32 {
         let (row, col) = pos;
-        self.data[(row * self.dy + col) as usize] - b'0'
+        (self.data[(row * self.dy + col) as usize] - b'0') as i32
     }
 }
 
@@ -89,12 +87,17 @@ impl<'a> SearchState for CrucibleState<'a> {
     // We need to distinguish search states depending on which direction we
     // reached them in, and how far we have travelled in a straight line when
     // doing so.
-    type Key = (RowCol, Dir, i32);
-
+    type Key = u32;
     type Iter = std::vec::IntoIter<CrucibleState<'a>>;
 
     fn key(&self) -> Self::Key {
-        (self.pos, self.current_dir, self.dir_count)
+        // The key is used for hash lookups a lot, so compress it into a 32-bit integer.
+        let (row, col) = self.pos;
+        let r = ((row as u32) & 0xff) << 24;
+        let c = ((col as u32) & 0xff) << 16;
+        let d = ((self.current_dir as u32) & 0xff) << 8;
+        let n = (self.dir_count as u32) & 0xff;
+        r | c | d | n
     }
 
     fn is_goal(&self) -> bool {
@@ -115,62 +118,61 @@ impl<'a> SearchState for CrucibleState<'a> {
     }
 
     fn next_states(self) -> Self::Iter {
-        use Dir::*;
+        //use Dir::*;
 
-        let v = vec![
-            (Up, (-1, 0)),
-            (Down, (1, 0)),
-            (Left, (0, -1)),
-            (Right, (0, 1)),
-        ];
+        [
+            (UP, (-1, 0)),
+            (DOWN, (1, 0)),
+            (LEFT, (0, -1)),
+            (RIGHT, (0, 1)),
+        ]
+        .into_iter()
+        .filter_map(|(dir, (delta_row, delta_col))| {
+            let count = self.dir_count;
+            let curr_dir = self.current_dir;
 
-        v.into_iter()
-            .filter_map(|(dir, (delta_row, delta_col))| {
-                let count = self.dir_count;
-                let curr_dir = self.current_dir;
-
-                // First, check the conditions on which directions we are allowed to take
-                if (curr_dir == dir && count >= self.heat_map.config.max_cnt)
-                    || (curr_dir != dir
-                        && curr_dir != Unspecified
-                        && count < self.heat_map.config.min_cnt.unwrap_or(0))
-                    || ((curr_dir == Up && dir == Down)
-                        || (curr_dir == Down && dir == Up)
-                        || (curr_dir == Right && dir == Left)
-                        || (curr_dir == Left && dir == Right))
-                {
-                    None
+            if (curr_dir == dir && count >= self.heat_map.config.max_cnt)
+                || (curr_dir != dir
+                    && curr_dir != UNSPECIFIED
+                    && count < self.heat_map.config.min_cnt.unwrap_or(0))
+                || ((curr_dir == UP && dir == DOWN)
+                    || (curr_dir == DOWN && dir == UP)
+                    || (curr_dir == RIGHT && dir == LEFT)
+                    || (curr_dir == LEFT && dir == RIGHT))
+            {
+                None
+            } else {
+                let (rows, cols) = self.heat_map.limits;
+                let (row, col) = self.pos;
+                let (nrow, ncol) = (row + delta_row, col + delta_col);
+                let dir_count = if dir == curr_dir {
+                    self.dir_count + 1
                 } else {
-                    let (rows, cols) = self.heat_map.limits;
-                    let (row, col) = self.pos;
-                    let (nrow, ncol) = (row + delta_row, col + delta_col);
-                    let dir_count = if dir == curr_dir {
-                        self.dir_count + 1
-                    } else {
-                        1
-                    };
-                    if nrow >= 0 && nrow < rows && ncol >= 0 && ncol < cols {
-                        Some((dir, dir_count, (nrow, ncol)))
-                    } else {
-                        None
-                    }
+                    1
+                };
+                if nrow >= 0 && nrow < rows && ncol >= 0 && ncol < cols {
+                    let cost = self.heat_map.heat_loss((nrow, ncol));
+                    Some((dir, dir_count, (nrow, ncol), cost))
+                } else {
+                    None
                 }
-            })
-            .map(|(dir, dir_count, pos)| CrucibleState {
-                heat_map: self.heat_map,
-                pos,
-                total_cost: self.total_cost + self.heat_map.heat_loss(pos) as usize,
-                dir_count,
-                current_dir: dir,
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
+            }
+        })
+        .map(|(dir, dir_count, pos, cost)| CrucibleState {
+            heat_map: self.heat_map,
+            pos,
+            total_cost: self.total_cost + cost as usize,
+            dir_count,
+            current_dir: dir,
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
     }
 }
 
 fn do_solve(input: &str, config: Config) -> usize {
     let heat_map = HeatMap::new(input, &config);
-    solve(CrucibleState::new(&heat_map, Dir::Unspecified, 0))
+    solve(CrucibleState::new(&heat_map, UNSPECIFIED, 0))
         .unwrap()
         .cost()
 }
