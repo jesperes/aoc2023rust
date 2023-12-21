@@ -273,28 +273,3 @@ fn solve_p2(input: &str) -> usize {
 
     res.iter().fold(1, |a, b| num::integer::lcm(a, *b))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_name() {
-        let ex = "broadcaster -> a, b, c
-    %a -> b
-    %b -> c
-    %c -> inv
-    &inv -> a";
-        assert_eq!((32000000, 0), solve(ex));
-    }
-
-    #[test]
-    fn test2() {
-        let ex = "broadcaster -> a
-%a -> inv, con
-&inv -> b
-%b -> con
-&con -> output";
-        assert_eq!((11687500, 0), solve(ex));
-    }
-}

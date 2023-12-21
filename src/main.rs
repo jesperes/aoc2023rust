@@ -223,7 +223,7 @@ fn run_one_puzzle_with_progress(
         (2023, 18) => Some(run_with_types(pi, args, pb, &y2023::day18::Solution)),
         (2023, 19) => Some(run_with_types(pi, args, pb, &y2023::day19::Solution)),
         (2023, 20) => Some(run_with_types(pi, args, pb, &y2023::day20::Solution)),
-        // (2023, 21) => Some(run_with_types(pi, args, pb, &y2023::day21::Solution)),
+        (2023, 21) => Some(run_with_types(pi, args, pb, &y2023::day21::Solution)),
         // (2023, 22) => Some(run_with_types(pi, args, pb, &y2023::day22::Solution)),
         // (2023, 23) => Some(run_with_types(pi, args, pb, &y2023::day23::Solution)),
         // (2023, 24) => Some(run_with_types(pi, args, pb, &y2023::day24::Solution)),
