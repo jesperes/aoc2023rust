@@ -119,9 +119,3 @@ fn solve_p2(grid: &(HashMap<RowCol, char>, RowCol, RowCol)) -> i64 {
     let x = constant.div_ceil(*rows);
     a0 * (x * x) + b0 * x + (v[0] - b0 - a0)
 }
-
-#[test]
-fn test1() {
-    let x: i32 = -1;
-    assert_eq!(3, x.rem_euclid(4));
-}

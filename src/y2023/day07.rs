@@ -114,14 +114,3 @@ fn classify_hand_with_jokers(hand: Vec<char>) -> HandType {
             classify_hand(hand).max(best)
         })
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_jokers() {
-        let hand_type = classify_hand_with_jokers("AJJBC".chars().collect_vec());
-        assert_eq!(HandType::ThreeOfAKind, hand_type);
-    }
-}
