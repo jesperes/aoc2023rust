@@ -1,28 +1,180 @@
+use std::fmt::{self, Display};
+
 use crate::Solver;
 use hashbrown::{HashMap, HashSet};
 use itertools::Itertools;
 
 type ResultType = i32;
 type CoordInt = i32;
-type Coord3D = (CoordInt, CoordInt, CoordInt);
+//type Coord3D = (CoordInt, CoordInt, CoordInt);
 type BrickId = i32;
 // type Brick = (Coord3D, Coord3D, BrickId);
-type Tower = HashMap<BrickId, Brick>;
+// type Tower = HashMap<BrickId, Brick>;
+
+#[derive(Debug, Eq, PartialEq, Hash)]
+struct Coord {
+    x: CoordInt,
+    y: CoordInt,
+    z: CoordInt,
+}
+
+impl Coord {
+    fn new_from_tuple(coord: &(CoordInt, CoordInt, CoordInt)) -> Self {
+        let (x, y, z) = *coord;
+        Coord { x, y, z }
+    }
+
+    fn dropn(&self, n: i32) -> Coord {
+        Coord {
+            z: self.z - n,
+            ..*self
+        }
+    }
+}
+
+impl fmt::Display for Coord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({},{},{})", self.x, self.y, self.z)
+    }
+}
 
 #[derive(Debug)]
 struct Brick {
-    corner_a: Coord3D,
-    corner_b: Coord3D,
+    corner1: Coord,
+    corner2: Coord,
     id: BrickId,
 }
 
+impl fmt::Display for Brick {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}-{}", self.id_as_char(), self.corner1, self.corner2)
+    }
+}
+
 impl Brick {
-    fn new(id: BrickId, corner_a: Coord3D, corner_b: Coord3D) -> Self {
+    fn new(id: BrickId, corner1: Coord, corner2: Coord) -> Self {
         Brick {
             id,
-            corner_a,
-            corner_b,
+            corner1,
+            corner2,
         }
+    }
+
+    fn lowest_point(&self) -> CoordInt {
+        self.corner1.z.min(self.corner2.z)
+    }
+
+    fn dropn(&self, n: i32) -> Brick {
+        Brick {
+            id: self.id,
+            corner1: self.corner1.dropn(n),
+            corner2: self.corner2.dropn(n),
+        }
+    }
+
+    /// Returns an iterator over all the invididual cubes of this brick
+    fn cubes(&self) -> HashSet<Coord> {
+        let mut cubes = HashSet::new();
+        for x in iter_ordered_inclusive(self.corner1.x, self.corner2.x) {
+            for y in iter_ordered_inclusive(self.corner1.y, self.corner2.y) {
+                for z in iter_ordered_inclusive(self.corner1.z, self.corner2.z) {
+                    cubes.insert(Coord::new_from_tuple(&(x, y, z)));
+                }
+            }
+        }
+        cubes
+    }
+
+    fn overlaps(&self, other: &Brick) -> bool {
+        !self.cubes().is_disjoint(&other.cubes())
+    }
+
+    fn id_as_char(&self) -> char {
+        (b'A' + self.id as u8) as char
+    }
+}
+
+#[derive(Debug)]
+struct Tower {
+    bricks: HashMap<BrickId, Brick>,
+}
+
+impl Tower {
+    /// Create a new tower by parsing the puzzle input
+    fn new_from_input(input: &str) -> Self {
+        Tower {
+            bricks: input
+                .lines()
+                .zip(0..)
+                .map(|(line, i)| {
+                    let (x0, y0, z0, x1, y1, z1) = line
+                        .split(|c| "~,".contains(c))
+                        .map(|s| s.parse::<CoordInt>().unwrap())
+                        .collect_tuple()
+                        .unwrap();
+                    (
+                        i,
+                        Brick::new(
+                            i,
+                            Coord::new_from_tuple(&(x0, y0, z0)),
+                            Coord::new_from_tuple(&(x1, y1, z1)),
+                        ),
+                    )
+                })
+                .collect::<HashMap<_, _>>(),
+        }
+    }
+
+    /// Return an iterator which iterates over all the bricks in order of
+    /// lowest->highest.
+    fn iter_brick_from_bottom(&self) -> std::vec::IntoIter<&Brick> {
+        let mut bricks = self.bricks.values().collect_vec();
+        bricks.sort_by_key(|elem| elem.lowest_point());
+        bricks.into_iter()
+    }
+
+    /// Returns true if `brick` overlaps with any brick in the tower, false
+    /// otherwise.
+    fn overlapping_bricks(&self, other: &Brick) -> Vec<&Brick> {
+        self.bricks
+            .values()
+            .filter(|brick| brick.overlaps(other))
+            .collect::<Vec<_>>()
+    }
+
+    fn drop_all_bricks(&mut self) {
+        for brick in self.iter_brick_from_bottom() {
+            println!("\n## Dropping brick: {}", brick);
+            for dz in 1.. {
+                let dropped = brick.dropn(dz);
+                if dropped.lowest_point() == 0 {
+                    println!("Dropped brick {} reached bottom at {}", brick, dropped);
+                    break;
+                } else {
+                    let overlapping_bricks = self.overlapping_bricks(&dropped);
+                    if !overlapping_bricks.is_empty() {
+                        println!(
+                            "Dropped brick {} overlaps with existing bricks in tower at {}: {:?}",
+                            brick,
+                            dropped,
+                            overlapping_bricks
+                                .iter()
+                                .map(|ob| ob.id_as_char())
+                                .collect_vec()
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn iter_ordered_inclusive(a: CoordInt, b: CoordInt) -> std::ops::RangeInclusive<CoordInt> {
+    if a < b {
+        a..=b
+    } else {
+        b..=a
     }
 }
 
@@ -34,222 +186,9 @@ impl Solver<ResultType, ResultType> for Solution {
 }
 
 fn solve(input: &str) -> (ResultType, ResultType) {
-    let mut tower: Tower = HashMap::new();
-    let mut bricks: Vec<Brick> = input
-        .lines()
-        .zip(0..)
-        .map(|(line, i)| {
-            let (x0, y0, z0, x1, y1, z1) = line
-                .split(|c| "~,".contains(c))
-                .map(|s| s.parse::<CoordInt>().unwrap())
-                .collect_tuple()
-                .unwrap();
-            Brick::new(i, (x0, y0, z0), (x1, y1, z1))
-        })
-        .collect_vec();
-
-    let (_, dropped_bricks) = drop_all_bricks(&bricks, &mut tower);
-
-    // display_tower_xy(&tower);
-    // Check which ones can be disintegrated
-
-    // let p1 = dropped_bricks
-    //     .iter()
-    //     .filter(|maybe_disintegrate_brick| {
-    //         let (_, _, id_to_disintegrate) = **maybe_disintegrate_brick;
-
-    //         println!(
-    //             "Checking if we can disintegrate brick {}: {:?}",
-    //             id_to_char(id_to_disintegrate),
-    //             maybe_disintegrate_brick
-    //         );
-
-    //         // Remove the brick
-    //         let bricks0 = dropped_bricks
-    //             .iter()
-    //             .filter(|&(_, _, id)| *id != id_to_disintegrate)
-    //             .map(|(a, b, id)| (*a, *b, *id))
-    //             .collect::<Vec<_>>();
-    //         // let mut tower0 = tower
-    //         //     .iter()
-    //         //     .filter(|&(_, id)| *id != id_to_disintegrate)
-    //         //     .map(|(a, id)| (*a, *id))
-    //         //     .collect::<HashMap<_, _>>();
-
-    //         let mut tower0: Tower = HashMap::new();
-
-    //         let (num_moved, _new_bricks) = drop_all_bricks(&bricks0, &mut tower0);
-
-    //         let c = id_to_char(id_to_disintegrate);
-    //         println!("Before disintegrating {c}");
-    //         display_tower_xy(&tower);
-    //         println!("After disintegrating {c}");
-    //         display_tower_xy(&tower0);
-
-    //         if num_moved == 0 {
-    //             println!("When disintegrating {c}, all other bricks stayed in place");
-    //             true
-    //         } else {
-    //             println!("When disintegrating {c}, {num_moved} other bricks moved");
-    //             false
-    //         }
-    //     })
-    //     .count();
-
-    (p1 as i32, 0)
-}
-
-fn drop_all_bricks(bricks: &[Brick], tower: &mut Tower) -> (i32, Vec<Brick>) {
-    let mut moved = 0;
-
-    let out_bricks = bricks
-        .iter()
-        .map(|brick| {
-            let (_, _, id) = brick;
-            if let Some(dropped) = drop_one_brick(brick, tower) {
-                insert_into_tower(&dropped, tower);
-                println!("Brick {} moved to {:?}", id_to_char(*id), dropped);
-                moved += 1;
-                dropped
-            } else {
-                insert_into_tower(brick, tower);
-                println!("Brick {} stayed at {:?}", id_to_char(*id), brick);
-                *brick
-            }
-        })
-        .collect::<Vec<_>>();
-    (moved, out_bricks)
-}
-
-fn insert_into_tower(brick: &Brick, tower: &mut Tower) {
-    let ((ax, ay, az), (bx, by, bz), id) = *brick;
-    for x in ordered_iter(ax, bx) {
-        for y in ordered_iter(ay, by) {
-            for z in ordered_iter(az, bz) {
-                tower.insert((x, y, z), id);
-            }
-        }
-    }
-}
-
-fn ordered_iter(from: CoordInt, to: CoordInt) -> std::ops::RangeInclusive<i32> {
-    if from < to {
-        from..=to
-    } else {
-        to..=from
-    }
-}
-
-fn drop_one_brick(brick: &Brick, tower: &Tower) -> Option<Brick> {
-    let ((ax, ay, az), (bx, by, bz), id) = *brick;
-
-    let dz = if let Some(first_tower_intersect_dz) = (1..az).find(|dz| {
-        let brick0 = ((ax, ay, az - dz), (bx, by, bz - dz), id);
-        intersects_with_tower(&brick0, tower)
-    }) {
-        let c = id_to_char(id);
-        println!("While dropping {c}, it intersected with the tower after falling {first_tower_intersect_dz} steps");
-        first_tower_intersect_dz - 1
-    } else {
-        az - 1
-    };
-
-    if dz == 0 {
-        None
-    } else {
-        Some(((ax, ay, az - dz), (bx, by, bz - dz), id))
-    }
-}
-
-/// maybe_exclude: if this is Some(id), then the specified brick is considered
-/// to not be part of the tower.
-fn intersects_with_tower(brick: &Brick, tower: &Tower) -> bool {
-    let ((ax, ay, az), (bx, by, bz), id) = *brick;
-    tower.iter().any(|((tx, ty, tz), tid)| {
-        if ordered_iter(ax, bx).contains(tx)
-            && ordered_iter(ay, by).contains(ty)
-            && ordered_iter(az, bz).contains(tz)
-        {
-            let c = id_to_char(id);
-            let tc = id_to_char(*tid);
-            println!(
-                "Tower cube {:?} (part of brick {tc}) intersects with brick {c}: {:?}",
-                (tx, ty, tz),
-                brick
-            );
-            true
-        } else {
-            false
-        }
-    })
-}
-
-fn sort_by_lowest_z_coord(bricks: &mut [Brick]) {
-    bricks.sort_by(
-        |((_, _, az0), (_, _, az1), _ida), ((_, _, bz0), (_, _, bz1), _idb)| {
-            az0.min(az1).cmp(bz0.min(bz1))
-        },
-    )
-}
-
-fn id_to_char(id: i32) -> char {
-    (b'A' + id as u8) as char
-}
-fn display_tower_xy(tower: &HashMap<Coord3D, BrickId>) {
-    // display view (see example 1)
-    println!("\n## Tower");
-    for view_z in (0..=9).rev() {
-        if view_z == 0 {
-            println!("{:2} ---  ---", view_z);
-        } else {
-            print!("{:2} ", view_z);
-            for view_x in 0..=2 {
-                let v = tower
-                    .iter()
-                    .filter_map(|((x, _y, z), id)| {
-                        if *x == view_x && *z == view_z {
-                            Some(id)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<HashSet<_>>();
-
-                let c = match v.len() {
-                    0 => '.',
-                    _ => id_to_char(**v.iter().next().unwrap()),
-                    // => '?',
-                };
-
-                print!("{c}");
-            }
-
-            print!("  ");
-
-            for view_y in 0..=2 {
-                let v = tower
-                    .iter()
-                    .filter_map(|((_x, y, z), id)| {
-                        if *y == view_y && *z == view_z {
-                            Some(id)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<HashSet<_>>();
-
-                let c = match v.len() {
-                    0 => '.',
-                    _ => id_to_char(**v.iter().next().unwrap()),
-                    // _ => '?',
-                };
-
-                print!("{c}");
-            }
-
-            println!();
-        }
-    }
+    let mut tower = Tower::new_from_input(input);
+    tower.drop_all_bricks();
+    (0, 0)
 }
 
 #[test]
