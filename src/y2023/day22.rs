@@ -1,7 +1,8 @@
-use std::fmt::{self, Display};
+use std::fmt;
 
 use crate::Solver;
-use hashbrown::{HashMap, HashSet};
+use hashbrown::HashMap;
+use itertools::FoldWhile::{Continue, Done};
 use itertools::Itertools;
 
 type ResultType = i32;
@@ -11,7 +12,7 @@ type BrickId = i32;
 // type Brick = (Coord3D, Coord3D, BrickId);
 // type Tower = HashMap<BrickId, Brick>;
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 struct Coord {
     x: CoordInt,
     y: CoordInt,
@@ -38,7 +39,7 @@ impl fmt::Display for Coord {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Brick {
     corner1: Coord,
     corner2: Coord,
@@ -47,7 +48,7 @@ struct Brick {
 
 impl fmt::Display for Brick {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}-{}", self.id_as_char(), self.corner1, self.corner2)
+        write!(f, "{}:{}-{}", self.id, self.corner1, self.corner2)
     }
 }
 
@@ -64,6 +65,18 @@ impl Brick {
         self.corner1.z.min(self.corner2.z)
     }
 
+    // fn covers_z(&self, z: CoordInt) -> bool {
+    //     let lower_z = self.corner1.z.min(self.corner2.z);
+    //     let upper_z = self.corner1.z.max(self.corner2.z);
+    //     (lower_z..=upper_z).contains(&z)
+    // }
+
+    // fn covers_x(&self, x: CoordInt) -> bool {
+    //     let lower_x = self.corner1.x.min(self.corner2.x);
+    //     let upper_x = self.corner1.x.max(self.corner2.x);
+    //     (lower_x..=upper_x).contains(&x)
+    // }
+
     fn dropn(&self, n: i32) -> Brick {
         Brick {
             id: self.id,
@@ -72,27 +85,21 @@ impl Brick {
         }
     }
 
-    /// Returns an iterator over all the invididual cubes of this brick
-    fn cubes(&self) -> HashSet<Coord> {
-        let mut cubes = HashSet::new();
-        for x in iter_ordered_inclusive(self.corner1.x, self.corner2.x) {
-            for y in iter_ordered_inclusive(self.corner1.y, self.corner2.y) {
-                for z in iter_ordered_inclusive(self.corner1.z, self.corner2.z) {
-                    cubes.insert(Coord::new_from_tuple(&(x, y, z)));
-                }
-            }
-        }
-        cubes
-    }
-
-    fn overlaps(&self, other: &Brick) -> bool {
-        !self.cubes().is_disjoint(&other.cubes())
-    }
-
-    fn id_as_char(&self) -> char {
-        (b'A' + self.id as u8) as char
+    fn overlaps(&self, _other: &Brick) -> bool {
+        // let xrange = ordered_range(self.corner1.x, self.corner2.x);
+        // let yrange = ordered_range(self.corner1.y, self.corner2.y);
+        // let zrange = ordered_range(self.corner1.z, self.corner2.z);
+        false
     }
 }
+
+// fn ordered_range(a: CoordInt, b: CoordInt) -> std::ops::RangeInclusive<i32> {
+//     if a < b {
+//         a..=b
+//     } else {
+//         b..=a
+//     }
+// }
 
 #[derive(Debug)]
 struct Tower {
@@ -125,58 +132,128 @@ impl Tower {
         }
     }
 
-    /// Return an iterator which iterates over all the bricks in order of
-    /// lowest->highest.
-    fn iter_brick_from_bottom(&self) -> std::vec::IntoIter<&Brick> {
-        let mut bricks = self.bricks.values().collect_vec();
-        bricks.sort_by_key(|elem| elem.lowest_point());
-        bricks.into_iter()
-    }
+    // fn print_tower(&self) {
+    //     for view_z in (0..=9).rev() {
+    //         print!("{:2} ", view_z);
+
+    //         if view_z == 0 {
+    //             println!("---");
+    //         } else {
+    //             for view_x in 0..=2 {
+    //                 if let Some(brick) = self
+    //                     .bricks
+    //                     .values()
+    //                     .find(|brick| brick.covers_z(view_z) && brick.covers_x(view_x))
+    //                 {
+    //                     print!("{}", brick.id);
+    //                 } else {
+    //                     print!(".");
+    //                 }
+    //             }
+    //             println!();
+    //         }
+    //     }
+    // }
 
     /// Returns true if `brick` overlaps with any brick in the tower, false
     /// otherwise.
-    fn overlapping_bricks(&self, other: &Brick) -> Vec<&Brick> {
-        self.bricks
+    fn valid_pos(&self, other: &Brick, id_to_exclude: Option<i32>) -> bool {
+        if other.lowest_point() == 0 {
+            // println!("... {other} is not a valid brick, it is below the bottom position");
+            false
+        } else if let Some(_overlaps_with) = self
+            .bricks
             .values()
-            .filter(|brick| brick.overlaps(other))
-            .collect::<Vec<_>>()
-    }
-
-    fn drop_all_bricks(&mut self) {
-        for brick in self.iter_brick_from_bottom() {
-            println!("\n## Dropping brick: {}", brick);
-            for dz in 1.. {
-                let dropped = brick.dropn(dz);
-                if dropped.lowest_point() == 0 {
-                    println!("Dropped brick {} reached bottom at {}", brick, dropped);
-                    break;
+            .filter(|brick| {
+                if let Some(id) = id_to_exclude {
+                    id != brick.id
                 } else {
-                    let overlapping_bricks = self.overlapping_bricks(&dropped);
-                    if !overlapping_bricks.is_empty() {
-                        println!(
-                            "Dropped brick {} overlaps with existing bricks in tower at {}: {:?}",
-                            brick,
-                            dropped,
-                            overlapping_bricks
-                                .iter()
-                                .map(|ob| ob.id_as_char())
-                                .collect_vec()
-                        );
-                        break;
-                    }
+                    true
                 }
-            }
+            })
+            .find(|brick| brick.id != other.id && brick.overlaps(other))
+        {
+            // println!("... {other} is not a valid brick, it overlaps with {overlaps_with}");
+            false
+        } else {
+            true
         }
     }
-}
 
-fn iter_ordered_inclusive(a: CoordInt, b: CoordInt) -> std::ops::RangeInclusive<CoordInt> {
-    if a < b {
-        a..=b
-    } else {
-        b..=a
+    fn drop(&self, brick: Brick, id_to_exclude: Option<i32>) -> Brick {
+        let lowest_point = brick.lowest_point();
+        let max_drop_dist = lowest_point;
+        (1..max_drop_dist)
+            .fold_while(brick, |last_valid, dz| {
+                let dropped = brick.dropn(dz);
+                if self.valid_pos(&dropped, id_to_exclude) {
+                    // println!("... Dropped brick {dropped} is at a valid position, continuing");
+                    Continue(dropped)
+                } else {
+                    // println!(
+                    //     "Dropping {brick} reached bottom or collides with another brick at {dropped}"
+                    // );
+                    Done(last_valid)
+                }
+            })
+            .into_inner()
+    }
+
+    fn drop_all_bricks(&mut self) -> i32 {
+        let mut bricks = self.bricks.values().copied().collect_vec();
+        bricks.sort_by_key(|elem| elem.lowest_point());
+        let mut num_dropped = 0;
+
+        for brick in bricks {
+            // println!("Dropping brick: {}", brick);
+            let dropped = self.drop(brick, None);
+            if dropped != brick {
+                num_dropped += 1;
+            }
+
+            *self.bricks.get_mut(&dropped.id).unwrap() = dropped;
+            // println!("Brick {brick} dropped to lower-most valid position {dropped}",);
+        }
+        num_dropped
+    }
+
+    fn find_num_removable_bricks(&self) -> ResultType {
+        let mut bricks = self.bricks.values().copied().collect_vec();
+        bricks.sort_by_key(|elem| elem.lowest_point());
+        let mut num_removable = 0;
+
+        for maybe_remove_brick in &bricks {
+            let mut is_removable = true;
+            // println!("Checking if {maybe_remove_brick} is removable...");
+
+            for other_brick in &bricks {
+                if other_brick.id == maybe_remove_brick.id {
+                    continue;
+                }
+
+                let drop = other_brick.dropn(1);
+                if !self.valid_pos(&drop, Some(maybe_remove_brick.id)) {
+                    // At least one other brick would fall if we removed this brick
+                    is_removable = false;
+                    break;
+                }
+            }
+
+            if is_removable {
+                num_removable += 1;
+            }
+        }
+        num_removable
     }
 }
+
+// fn iter_ordered_inclusive(a: CoordInt, b: CoordInt) -> std::ops::RangeInclusive<CoordInt> {
+//     if a < b {
+//         a..=b
+//     } else {
+//         b..=a
+//     }
+// }
 
 pub struct Solution;
 impl Solver<ResultType, ResultType> for Solution {
@@ -188,17 +265,19 @@ impl Solver<ResultType, ResultType> for Solution {
 fn solve(input: &str) -> (ResultType, ResultType) {
     let mut tower = Tower::new_from_input(input);
     tower.drop_all_bricks();
-    (0, 0)
+    // tower.print_tower();
+    let p1 = tower.find_num_removable_bricks();
+    (p1, 0)
 }
 
-#[test]
-fn test_ex1() {
-    let ex1 = "1,0,1~1,2,1
-0,0,2~2,0,2
-0,2,3~2,2,3
-0,0,4~0,2,4
-2,0,5~2,2,5
-0,1,6~2,1,6
-1,1,8~1,1,9";
-    assert_eq!((5, 0), solve(ex1));
-}
+// #[test]
+// fn test_ex1() {
+//     let ex1 = "1,0,1~1,2,1
+// 0,0,2~2,0,2
+// 0,2,3~2,2,3
+// 0,0,4~0,2,4
+// 2,0,5~2,2,5
+// 0,1,6~2,1,6
+// 1,1,8~1,1,9";
+//     assert_eq!((5, 0), solve(ex1));
+// }
