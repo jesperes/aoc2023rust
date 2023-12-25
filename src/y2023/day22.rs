@@ -12,7 +12,7 @@ type BrickId = i32;
 // type Brick = (Coord3D, Coord3D, BrickId);
 // type Tower = HashMap<BrickId, Brick>;
 
-#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy, PartialOrd, Ord)]
 struct Coord {
     x: CoordInt,
     y: CoordInt,
@@ -39,7 +39,7 @@ impl fmt::Display for Coord {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Brick {
     corner1: Coord,
     corner2: Coord,
@@ -65,17 +65,17 @@ impl Brick {
         self.corner1.z.min(self.corner2.z)
     }
 
-    // fn covers_z(&self, z: CoordInt) -> bool {
-    //     let lower_z = self.corner1.z.min(self.corner2.z);
-    //     let upper_z = self.corner1.z.max(self.corner2.z);
-    //     (lower_z..=upper_z).contains(&z)
-    // }
+    fn covers_z(&self, z: CoordInt) -> bool {
+        let lower_z = self.corner1.z.min(self.corner2.z);
+        let upper_z = self.corner1.z.max(self.corner2.z);
+        (lower_z..=upper_z).contains(&z)
+    }
 
-    // fn covers_x(&self, x: CoordInt) -> bool {
-    //     let lower_x = self.corner1.x.min(self.corner2.x);
-    //     let upper_x = self.corner1.x.max(self.corner2.x);
-    //     (lower_x..=upper_x).contains(&x)
-    // }
+    fn covers_x(&self, x: CoordInt) -> bool {
+        let lower_x = self.corner1.x.min(self.corner2.x);
+        let upper_x = self.corner1.x.max(self.corner2.x);
+        (lower_x..=upper_x).contains(&x)
+    }
 
     fn dropn(&self, n: i32) -> Brick {
         Brick {
@@ -85,21 +85,113 @@ impl Brick {
         }
     }
 
-    fn overlaps(&self, _other: &Brick) -> bool {
-        // let xrange = ordered_range(self.corner1.x, self.corner2.x);
-        // let yrange = ordered_range(self.corner1.y, self.corner2.y);
-        // let zrange = ordered_range(self.corner1.z, self.corner2.z);
-        false
+    fn overlaps(&self, other: &Brick) -> bool {
+        let a = self;
+        let b = other;
+        overlaps_range(a.corner1.x, a.corner2.x, b.corner1.x, b.corner2.x)
+            && overlaps_range(a.corner1.y, a.corner2.y, b.corner1.y, b.corner2.y)
+            && overlaps_range(a.corner1.z, a.corner2.z, b.corner1.z, b.corner2.z)
     }
 }
 
-// fn ordered_range(a: CoordInt, b: CoordInt) -> std::ops::RangeInclusive<i32> {
-//     if a < b {
-//         a..=b
-//     } else {
-//         b..=a
-//     }
-// }
+fn overlaps_range(a1: i32, a2: i32, b1: i32, b2: i32) -> bool {
+    let a_width = a1.max(a2) - a1.min(a2) + 1;
+    let b_width = b1.max(b2) - b1.min(b2) + 1;
+    let min = a1.min(a2).min(b1).min(b2);
+    let max = a1.max(a2).max(b1).max(b2);
+    let minmax_range = max - min + 1;
+    let sum_of_range_widths = a_width + b_width;
+    sum_of_range_widths > minmax_range
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hashbrown::HashSet;
+    use rand::{Rng, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
+
+    #[test]
+    fn test_overlaps_range() {
+        let mut rng = ChaCha8Rng::seed_from_u64(2);
+
+        let num_ranges = 1000;
+        let (a, b) = (-20, 20);
+
+        for _id in 0..num_ranges {
+            let ax0 = rng.gen_range(a..b);
+            let ax1 = rng.gen_range(a..b);
+            let bx0 = rng.gen_range(a..b);
+            let bx1 = rng.gen_range(a..b);
+
+            let mut set1 = HashSet::new();
+            let mut set2 = HashSet::new();
+
+            for x in ax0.min(ax1)..=ax0.max(ax1) {
+                set1.insert(x);
+            }
+            for x in bx0.min(bx1)..=bx0.max(bx1) {
+                set2.insert(x);
+            }
+
+            let intersection = set1.intersection(&set2).collect_vec();
+            assert_eq!(!intersection.is_empty(), overlaps_range(ax0, ax1, bx0, bx1));
+        }
+    }
+
+    #[test]
+    fn test_overlaps() {
+        let mut bricks = Vec::new();
+        let mut rng = ChaCha8Rng::seed_from_u64(2);
+
+        let num_bricks = 100;
+        let (a, b) = (0, 20);
+
+        for id in 0..num_bricks {
+            let corner1 = Coord {
+                x: rng.gen_range(a..b),
+                y: rng.gen_range(a..b),
+                z: rng.gen_range(a..b),
+            };
+            let corner2 = Coord {
+                x: rng.gen_range(a..b),
+                y: rng.gen_range(a..b),
+                z: rng.gen_range(a..b),
+            };
+            bricks.push(Brick {
+                id,
+                corner1,
+                corner2,
+            })
+        }
+
+        bricks
+            .iter()
+            .cartesian_product(bricks.iter())
+            .filter(|(a, b)| a < b)
+            .for_each(|(a, b)| {
+                let mut set1 = HashSet::new();
+                let mut set2 = HashSet::new();
+                for x in a.corner1.x.min(a.corner2.x)..=a.corner1.x.max(a.corner2.x) {
+                    for y in a.corner1.y.min(a.corner2.y)..=a.corner1.y.max(a.corner2.y) {
+                        for z in a.corner1.z.min(a.corner2.z)..=a.corner1.z.max(a.corner2.z) {
+                            set1.insert((x, y, z));
+                        }
+                    }
+                }
+                for x in b.corner1.x.min(b.corner2.x)..=b.corner1.x.max(b.corner2.x) {
+                    for y in b.corner1.y.min(b.corner2.y)..=b.corner1.y.max(b.corner2.y) {
+                        for z in b.corner1.z.min(b.corner2.z)..=b.corner1.z.max(b.corner2.z) {
+                            set2.insert((x, y, z));
+                        }
+                    }
+                }
+
+                let has_intersection = set1.intersection(&set2).count() != 0;
+                assert_eq!(has_intersection, a.overlaps(b));
+            });
+    }
+}
 
 #[derive(Debug)]
 struct Tower {
@@ -112,7 +204,7 @@ impl Tower {
         Tower {
             bricks: input
                 .lines()
-                .zip(0..)
+                .zip(1..)
                 .map(|(line, i)| {
                     let (x0, y0, z0, x1, y1, z1) = line
                         .split(|c| "~,".contains(c))
@@ -132,28 +224,29 @@ impl Tower {
         }
     }
 
-    // fn print_tower(&self) {
-    //     for view_z in (0..=9).rev() {
-    //         print!("{:2} ", view_z);
+    #[allow(dead_code)]
+    fn print_tower(&self) {
+        for view_z in (0..=9).rev() {
+            print!("{:2} ", view_z);
 
-    //         if view_z == 0 {
-    //             println!("---");
-    //         } else {
-    //             for view_x in 0..=2 {
-    //                 if let Some(brick) = self
-    //                     .bricks
-    //                     .values()
-    //                     .find(|brick| brick.covers_z(view_z) && brick.covers_x(view_x))
-    //                 {
-    //                     print!("{}", brick.id);
-    //                 } else {
-    //                     print!(".");
-    //                 }
-    //             }
-    //             println!();
-    //         }
-    //     }
-    // }
+            if view_z == 0 {
+                println!("---");
+            } else {
+                for view_x in 0..=2 {
+                    if let Some(brick) = self
+                        .bricks
+                        .values()
+                        .find(|brick| brick.covers_z(view_z) && brick.covers_x(view_x))
+                    {
+                        print!("{}", brick.id);
+                    } else {
+                        print!(".");
+                    }
+                }
+                println!();
+            }
+        }
+    }
 
     /// Returns true if `brick` overlaps with any brick in the tower, false
     /// otherwise.
@@ -191,7 +284,7 @@ impl Tower {
                     Continue(dropped)
                 } else {
                     // println!(
-                    //     "Dropping {brick} reached bottom or collides with another brick at {dropped}"
+                    //     // "Dropping {brick} reached bottom or collides with another brick at {dropped}"
                     // );
                     Done(last_valid)
                 }
@@ -217,6 +310,7 @@ impl Tower {
         num_dropped
     }
 
+    #[allow(dead_code)]
     fn find_num_removable_bricks(&self) -> ResultType {
         let mut bricks = self.bricks.values().copied().collect_vec();
         bricks.sort_by_key(|elem| elem.lowest_point());
@@ -232,8 +326,8 @@ impl Tower {
                 }
 
                 let drop = other_brick.dropn(1);
-                if !self.valid_pos(&drop, Some(maybe_remove_brick.id)) {
-                    // At least one other brick would fall if we removed this brick
+                if self.valid_pos(&drop, Some(maybe_remove_brick.id)) {
+                    // println!("Brick {maybe_remove_brick} is not removable, because {other_brick} fell at least one step");
                     is_removable = false;
                     break;
                 }
@@ -247,14 +341,6 @@ impl Tower {
     }
 }
 
-// fn iter_ordered_inclusive(a: CoordInt, b: CoordInt) -> std::ops::RangeInclusive<CoordInt> {
-//     if a < b {
-//         a..=b
-//     } else {
-//         b..=a
-//     }
-// }
-
 pub struct Solution;
 impl Solver<ResultType, ResultType> for Solution {
     fn solve(&self, input: &str) -> (ResultType, ResultType) {
@@ -264,20 +350,21 @@ impl Solver<ResultType, ResultType> for Solution {
 
 fn solve(input: &str) -> (ResultType, ResultType) {
     let mut tower = Tower::new_from_input(input);
+    // tower.print_tower();
     tower.drop_all_bricks();
     // tower.print_tower();
     let p1 = tower.find_num_removable_bricks();
     (p1, 0)
 }
 
-// #[test]
-// fn test_ex1() {
-//     let ex1 = "1,0,1~1,2,1
-// 0,0,2~2,0,2
-// 0,2,3~2,2,3
-// 0,0,4~0,2,4
-// 2,0,5~2,2,5
-// 0,1,6~2,1,6
-// 1,1,8~1,1,9";
-//     assert_eq!((5, 0), solve(ex1));
-// }
+#[test]
+fn test_ex1() {
+    let ex1 = "1,0,1~1,2,1
+0,0,2~2,0,2
+0,2,3~2,2,3
+0,0,4~0,2,4
+2,0,5~2,2,5
+0,1,6~2,1,6
+1,1,8~1,1,9";
+    assert_eq!((5, 0), solve(ex1));
+}
