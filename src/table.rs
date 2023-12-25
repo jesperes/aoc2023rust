@@ -1,8 +1,4 @@
-use comfy_table::{
-    modifiers::{UTF8_ROUND_CORNERS, UTF8_SOLID_INNER_BORDERS},
-    presets::*,
-    Attribute, Cell, Color, Table,
-};
+use comfy_table::{presets::*, Attribute, Cell, Color, Table};
 
 use crate::{Cli, PuzzleRun, SolverResult};
 
