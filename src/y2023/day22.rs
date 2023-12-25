@@ -194,7 +194,7 @@ mod tests {
 fn new_from_input(input: &str) -> Vec<Brick> {
     input
         .lines()
-        .zip(1..)
+        .zip(0..)
         .map(|(line, i)| {
             let (x0, y0, z0, x1, y1, z1) = line
                 .split(|c| "~,".contains(c))
@@ -269,12 +269,12 @@ fn drop_all_bricks(tower: &mut Tower) -> i32 {
 }
 
 #[allow(dead_code)]
-fn find_removable_bricks(tower: &mut Tower) -> Vec<i32> {
+fn find_removable_bricks(tower: &Tower) -> Vec<i32> {
     let mut num_fallen_bricks: Vec<i32> = Vec::new();
-    tower.sort_by_key(|brick| brick.lowest_point());
+    let mut tower0 = tower.clone();
 
     for i in 0..tower.len() {
-        let mut tower0 = tower.clone();
+        tower0.clone_from(tower);
         tower0.remove(i);
         let n = drop_all_bricks(&mut tower0);
         if n > 0 {
@@ -295,7 +295,7 @@ impl Solver<ResultType, ResultType> for Solution {
 fn solve(input: &str) -> (ResultType, ResultType) {
     let mut tower = new_from_input(input);
     drop_all_bricks(&mut tower);
-    let removables: Vec<i32> = find_removable_bricks(&mut tower);
+    let removables: Vec<i32> = find_removable_bricks(&tower);
     (
         tower.len() - removables.len(),
         removables.iter().sum::<i32>() as usize,
