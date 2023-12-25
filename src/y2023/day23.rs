@@ -99,7 +99,6 @@ impl Solver<ResultType, ResultType> for Solution {
 fn solve(input: &str) -> (ResultType, ResultType) {
     let mut grid: Grid = HashMap::new();
     let mut start: RowCol = (0, 0);
-    let mut _end: RowCol = (0, 0);
 
     let rows = input.lines().count() as i32;
     let _cols = input.lines().next().unwrap().len() as i32;
@@ -112,7 +111,7 @@ fn solve(input: &str) -> (ResultType, ResultType) {
 
     for ((row, col), c) in &grid {
         if *row == rows - 1 && *c == '.' {
-            _end = (*row, *col)
+            // _end = (*row, *col)
         } else if *row == 0 && *c == '.' {
             start = (*row, *col)
         }

@@ -29,7 +29,11 @@ pub fn make_table(runs: &mut Vec<PuzzleRun>, args: &Cli) -> comfy_table::Table {
             Cell::new(format!("{:?}", run.result.time)).add_attribute(Attribute::Bold),
             Cell::new(run.result.iters),
             solution_cell(&run.result.results.0),
-            solution_cell(&run.result.results.1),
+            if run.info.day == 25 {
+                Cell::new("--").fg(Color::DarkGrey)
+            } else {
+                solution_cell(&run.result.results.1)
+            },
         ]);
     }
     table.add_row(vec![

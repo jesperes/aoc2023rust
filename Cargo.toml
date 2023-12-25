@@ -21,6 +21,7 @@ lazy_static = "1.4.0"
 nd_vec = "0.4.0"
 num = "0.4.1"
 par-dfs = { version = "0.0.7", features = ["sync"] }
+petgraph = { version = "0.6.4", features = ["all"] }
 rayon = "1.8.0"
 regex = "1.10.2"
 reqwest = { version = "0.11.22", features = ["blocking"] }
