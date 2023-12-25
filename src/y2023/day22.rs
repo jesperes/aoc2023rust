@@ -1,16 +1,13 @@
 use std::fmt;
 
 use crate::Solver;
-use hashbrown::HashMap;
-use itertools::FoldWhile::{Continue, Done};
+
 use itertools::Itertools;
 
-type ResultType = i32;
+type ResultType = usize;
 type CoordInt = i32;
-//type Coord3D = (CoordInt, CoordInt, CoordInt);
 type BrickId = i32;
-// type Brick = (Coord3D, Coord3D, BrickId);
-// type Tower = HashMap<BrickId, Brick>;
+type Tower = Vec<Brick>;
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy, PartialOrd, Ord)]
 struct Coord {
@@ -39,7 +36,7 @@ impl fmt::Display for Coord {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 struct Brick {
     corner1: Coord,
     corner2: Coord,
@@ -193,152 +190,99 @@ mod tests {
     }
 }
 
-#[derive(Debug)]
-struct Tower {
-    bricks: HashMap<BrickId, Brick>,
+/// Create a new tower by parsing the puzzle input
+fn new_from_input(input: &str) -> Vec<Brick> {
+    input
+        .lines()
+        .zip(1..)
+        .map(|(line, i)| {
+            let (x0, y0, z0, x1, y1, z1) = line
+                .split(|c| "~,".contains(c))
+                .map(|s| s.parse::<CoordInt>().unwrap())
+                .collect_tuple()
+                .unwrap();
+            Brick::new(
+                i,
+                Coord::new_from_tuple(&(x0, y0, z0)),
+                Coord::new_from_tuple(&(x1, y1, z1)),
+            )
+        })
+        .collect::<_>()
 }
 
-impl Tower {
-    /// Create a new tower by parsing the puzzle input
-    fn new_from_input(input: &str) -> Self {
-        Tower {
-            bricks: input
-                .lines()
-                .zip(1..)
-                .map(|(line, i)| {
-                    let (x0, y0, z0, x1, y1, z1) = line
-                        .split(|c| "~,".contains(c))
-                        .map(|s| s.parse::<CoordInt>().unwrap())
-                        .collect_tuple()
-                        .unwrap();
-                    (
-                        i,
-                        Brick::new(
-                            i,
-                            Coord::new_from_tuple(&(x0, y0, z0)),
-                            Coord::new_from_tuple(&(x1, y1, z1)),
-                        ),
-                    )
-                })
-                .collect::<HashMap<_, _>>(),
-        }
-    }
+#[allow(dead_code)]
+fn print_tower(bricks: &[Brick]) {
+    for view_z in (0..=9).rev() {
+        print!("{:2} ", view_z);
 
-    #[allow(dead_code)]
-    fn print_tower(&self) {
-        for view_z in (0..=9).rev() {
-            print!("{:2} ", view_z);
-
-            if view_z == 0 {
-                println!("---");
-            } else {
-                for view_x in 0..=2 {
-                    if let Some(brick) = self
-                        .bricks
-                        .values()
-                        .find(|brick| brick.covers_z(view_z) && brick.covers_x(view_x))
-                    {
-                        print!("{}", brick.id);
-                    } else {
-                        print!(".");
-                    }
-                }
-                println!();
-            }
-        }
-    }
-
-    /// Returns true if `brick` overlaps with any brick in the tower, false
-    /// otherwise.
-    fn valid_pos(&self, other: &Brick, id_to_exclude: Option<i32>) -> bool {
-        if other.lowest_point() == 0 {
-            // println!("... {other} is not a valid brick, it is below the bottom position");
-            false
-        } else if let Some(_overlaps_with) = self
-            .bricks
-            .values()
-            .filter(|brick| {
-                if let Some(id) = id_to_exclude {
-                    id != brick.id
-                } else {
-                    true
-                }
-            })
-            .find(|brick| brick.id != other.id && brick.overlaps(other))
-        {
-            // println!("... {other} is not a valid brick, it overlaps with {overlaps_with}");
-            false
+        if view_z == 0 {
+            println!("---");
         } else {
-            true
-        }
-    }
-
-    fn drop(&self, brick: Brick, id_to_exclude: Option<i32>) -> Brick {
-        let lowest_point = brick.lowest_point();
-        let max_drop_dist = lowest_point;
-        (1..max_drop_dist)
-            .fold_while(brick, |last_valid, dz| {
-                let dropped = brick.dropn(dz);
-                if self.valid_pos(&dropped, id_to_exclude) {
-                    // println!("... Dropped brick {dropped} is at a valid position, continuing");
-                    Continue(dropped)
+            for view_x in 0..=2 {
+                if let Some(brick) = bricks
+                    .iter()
+                    .find(|brick| brick.covers_z(view_z) && brick.covers_x(view_x))
+                {
+                    print!("{}", brick.id);
                 } else {
-                    // println!(
-                    //     // "Dropping {brick} reached bottom or collides with another brick at {dropped}"
-                    // );
-                    Done(last_valid)
+                    print!(".");
                 }
-            })
-            .into_inner()
-    }
-
-    fn drop_all_bricks(&mut self) -> i32 {
-        let mut bricks = self.bricks.values().copied().collect_vec();
-        bricks.sort_by_key(|elem| elem.lowest_point());
-        let mut num_dropped = 0;
-
-        for brick in bricks {
-            // println!("Dropping brick: {}", brick);
-            let dropped = self.drop(brick, None);
-            if dropped != brick {
-                num_dropped += 1;
             }
-
-            *self.bricks.get_mut(&dropped.id).unwrap() = dropped;
-            // println!("Brick {brick} dropped to lower-most valid position {dropped}",);
+            println!();
         }
-        num_dropped
     }
+}
 
-    #[allow(dead_code)]
-    fn find_num_removable_bricks(&self) -> ResultType {
-        let mut bricks = self.bricks.values().copied().collect_vec();
-        bricks.sort_by_key(|elem| elem.lowest_point());
-        let mut num_removable = 0;
+fn valid_pos(brick: &Brick, tower: &mut Tower) -> bool {
+    brick.lowest_point() > 0
+        && tower
+            .iter()
+            .filter(|other| brick.id != other.id)
+            .all(|other| !brick.overlaps(other))
+}
 
-        for maybe_remove_brick in &bricks {
-            let mut is_removable = true;
-            // println!("Checking if {maybe_remove_brick} is removable...");
+/// Drops all bricks in the tower, except maybe one. Returns the number of bricks
+/// which dropped.
+fn drop_all_bricks(tower: &mut Tower) -> i32 {
+    let mut num_dropped = 0;
 
-            for other_brick in &bricks {
-                if other_brick.id == maybe_remove_brick.id {
-                    continue;
-                }
+    tower.sort_by_key(|brick| brick.lowest_point());
 
-                let drop = other_brick.dropn(1);
-                if self.valid_pos(&drop, Some(maybe_remove_brick.id)) {
-                    // println!("Brick {maybe_remove_brick} is not removable, because {other_brick} fell at least one step");
-                    is_removable = false;
-                    break;
-                }
-            }
-
-            if is_removable {
-                num_removable += 1;
+    for i in 0..tower.len() {
+        let mut dropped = tower[i].dropn(1);
+        let mut did_drop = false;
+        loop {
+            if valid_pos(&dropped, tower) {
+                tower[i] = dropped;
+                dropped = dropped.dropn(1);
+                did_drop = true;
+            } else {
+                break;
             }
         }
-        num_removable
+        if did_drop {
+            num_dropped += 1;
+        }
     }
+
+    num_dropped
+}
+
+#[allow(dead_code)]
+fn find_removable_bricks(tower: &mut Tower) -> Vec<i32> {
+    let mut num_fallen_bricks: Vec<i32> = Vec::new();
+    tower.sort_by_key(|brick| brick.lowest_point());
+
+    for i in 0..tower.len() {
+        let mut tower0 = tower.clone();
+        tower0.remove(i);
+        let n = drop_all_bricks(&mut tower0);
+        if n > 0 {
+            num_fallen_bricks.push(n);
+        }
+    }
+
+    num_fallen_bricks
 }
 
 pub struct Solution;
@@ -349,12 +293,13 @@ impl Solver<ResultType, ResultType> for Solution {
 }
 
 fn solve(input: &str) -> (ResultType, ResultType) {
-    let mut tower = Tower::new_from_input(input);
-    // tower.print_tower();
-    tower.drop_all_bricks();
-    // tower.print_tower();
-    let p1 = tower.find_num_removable_bricks();
-    (p1, 0)
+    let mut tower = new_from_input(input);
+    drop_all_bricks(&mut tower);
+    let removables: Vec<i32> = find_removable_bricks(&mut tower);
+    (
+        tower.len() - removables.len(),
+        removables.iter().sum::<i32>() as usize,
+    )
 }
 
 #[test]
@@ -366,5 +311,5 @@ fn test_ex1() {
 2,0,5~2,2,5
 0,1,6~2,1,6
 1,1,8~1,1,9";
-    assert_eq!((5, 0), solve(ex1));
+    assert_eq!((5, 7), solve(ex1));
 }
