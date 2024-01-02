@@ -1,4 +1,4 @@
-use comfy_table::{presets::*, Attribute, Cell, Color, Table};
+use comfy_table::{presets::*, Attribute, Cell, CellAlignment, Color, Table};
 
 use crate::{Cli, PuzzleRun, SolverResult};
 
@@ -14,7 +14,7 @@ pub fn make_table(runs: &mut Vec<PuzzleRun>, args: &Cli) -> comfy_table::Table {
 
     table.load_preset(UTF8_FULL_CONDENSED).set_header(vec![
         hdr_cell("Day"),
-        hdr_cell("Time"),
+        hdr_cell("Time in \u{b5}s"),
         hdr_cell("Iterations"),
         hdr_cell("Part 1"),
         hdr_cell("Part 2"),
@@ -27,7 +27,9 @@ pub fn make_table(runs: &mut Vec<PuzzleRun>, args: &Cli) -> comfy_table::Table {
     for run in runs {
         table.add_row(vec![
             Cell::new(run.info.day),
-            Cell::new(format!("{:?}", run.result.time)).add_attribute(Attribute::Bold),
+            Cell::new(format!("{:?}", run.result.time.as_micros()))
+                .set_alignment(CellAlignment::Right)
+                .add_attribute(Attribute::Bold),
             Cell::new(run.result.iters),
             solution_cell(&run.result.results.0),
             if run.info.day == 25 {
@@ -39,7 +41,7 @@ pub fn make_table(runs: &mut Vec<PuzzleRun>, args: &Cli) -> comfy_table::Table {
     }
     table.add_row(vec![
         Cell::new("Total").fg(Color::DarkBlue),
-        Cell::new(format!("{:?}", total_time))
+        Cell::new(format!("{:?} ms", total_time.as_micros()))
             .fg(Color::DarkBlue)
             .add_attribute(Attribute::Bold),
         Cell::new(""),
