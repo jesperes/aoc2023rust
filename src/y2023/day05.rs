@@ -25,7 +25,6 @@ struct SeedRange {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 struct RangeMapping {
     src_min: RangeInt,
     src_max: RangeInt,
@@ -51,7 +50,6 @@ fn print_interval(min: RangeInt, max: RangeInt, c: char) {
 }
 
 // #[trace(disable(new_random))]
-#[allow(dead_code)]
 impl SeedRange {
     fn new_singleton(n: RangeInt) -> Self {
         Self {
@@ -95,16 +93,16 @@ impl SeedRange {
     // #[trace]
     fn apply_mapping(&self, mapping: &RangeMapping) -> Option<Vec<SeedRange>> {
         if self.max < mapping.src_min || self.min > mapping.src_max {
-            println!("[apply-mapping] {:?} rule not applicable", self);
+            // println!("[apply-mapping] {:?} rule not applicable", self);
             None
         } else if self.min < mapping.src_min
             && self.max >= mapping.src_min
             && self.max <= mapping.src_max
         {
-            println!(
-                "[apply-mapping] {:?} seed range overlaps lower half of mapping range",
-                self
-            );
+            // println!(
+            //     "[apply-mapping] {:?} seed range overlaps lower half of mapping range",
+            //     self
+            // );
             let lower_part = Self::new_from_min_max(self.min, mapping.src_min - 1);
             let upper_part = Self::new_from_min_max(
                 mapping.dst_min,
@@ -113,29 +111,29 @@ impl SeedRange {
             Some(vec![lower_part, upper_part])
         } else if self.min >= mapping.src_min && self.max <= mapping.src_max {
             let offset = self.min - mapping.src_min;
-            println!(
-                "[apply-mapping] {:?} seed range is enclosed by mapping range",
-                self
-            );
+            // println!(
+            //     "[apply-mapping] {:?} seed range is enclosed by mapping range",
+            //     self
+            // );
             Some(vec![Self::new_from_start_len(
                 mapping.dst_min + offset,
                 self.len,
             )])
         } else if self.min < mapping.src_min && self.max > mapping.src_max {
-            println!(
-                "[apply-mapping] {:?} mapping range is enclosed by seed range",
-                self
-            );
+            // println!(
+            //     "[apply-mapping] {:?} mapping range is enclosed by seed range",
+            //     self
+            // );
             Some(vec![
                 Self::new_from_min_max(self.min, mapping.src_min - 1),
                 Self::new_from_min_max(mapping.dst_min, mapping.dst_max),
                 Self::new_from_min_max(mapping.src_max + 1, self.max),
             ])
         } else if self.min <= mapping.src_max && self.max > mapping.src_max {
-            println!(
-                "[apply-mapping] {:?} seed range overlaps upper half of mapping range",
-                self
-            );
+            // println!(
+            //     "[apply-mapping] {:?} seed range overlaps upper half of mapping range",
+            //     self
+            // );
             // seed range overlaps with upper bound of the mapping range
             let offset = self.min - mapping.src_min;
             Some(vec![
@@ -173,7 +171,6 @@ impl RangeMapping {
         Self::new(src_min, src_max, dst_min, dst_max)
     }
 
-    #[allow(dead_code)]
     fn new_random<R: Rng>(rng: &mut R) -> Self {
         let src_min = rng.gen_range(0..80);
         let dst_min = rng.gen_range(100..120);
@@ -187,7 +184,6 @@ impl RangeMapping {
         }
     }
 
-    #[allow(dead_code)]
     fn print(&self) {
         println!("Mapping, source range:");
         print_interval(self.src_min, self.src_max, 'V');
@@ -197,21 +193,33 @@ impl RangeMapping {
 }
 
 fn solve(input: &str) -> (i64, i64) {
+    let p1 = solve_p1(input);
+    let p2 = solve_p2(input);
+    (p1, p2)
+}
+
+fn solve_p1(input: &str) -> i64 {
     let elems = input.split("\n\n").collect_vec();
     let seeds = parse_seeds_p1(elems[0]);
     let maps = parse_maps(&elems[1..]);
 
-    apply_maps(&seeds, &maps);
-
-    // println!("seeds={:?}", seeds);
-    // println!("maps={:?}", maps);
-    (0, 0)
+    apply_maps(&seeds, &maps)
 }
 
-fn apply_maps(seeds: &[SeedRange], maps: &Vec<Vec<RangeMapping>>) {
+fn solve_p2(input: &str) -> i64 {
+    let elems = input.split("\n\n").collect_vec();
+    let seeds = parse_seeds_p2(elems[0]);
+    let maps = parse_maps(&elems[1..]);
+
+    apply_maps(&seeds, &maps)
+}
+
+fn apply_maps(seeds: &[SeedRange], maps: &Vec<Vec<RangeMapping>>) -> i64 {
+    let mut min_location = i64::MAX;
+
     for seed_range in seeds {
-        println!("\n\n=== Processing seed range");
-        seed_range.print('S');
+        // println!("\n\n=== Processing seed range");
+        // seed_range.print('S');
 
         // "seeds_in" is the seeds as they are being passed through the mapping
         // ranges.
@@ -249,11 +257,13 @@ fn apply_maps(seeds: &[SeedRange], maps: &Vec<Vec<RangeMapping>>) {
             seeds_out.clear();
         }
 
-        println!("{:?}\n->\n{:?}", seed_range, seeds_in);
+        // println!("{:?}\n->\n{:?}", seed_range, seeds_in);
+        min_location = min_location.min(seeds_in.first().unwrap().min);
     }
+
+    min_location
 }
 
-#[allow(dead_code)]
 fn parse_seeds_p1(input: &str) -> Vec<SeedRange> {
     input
         .split(' ')
@@ -283,6 +293,7 @@ fn parse_maps(elems: &[&str]) -> Vec<Vec<RangeMapping>> {
         .map(|s| {
             s.split('\n')
                 .skip(1)
+                .filter(|s| !s.is_empty())
                 .map(RangeMapping::new_from_line)
                 .collect_vec()
         })
@@ -347,7 +358,6 @@ mod tests {
     //     }
     // }
 
-    #[allow(dead_code)]
     #[test]
     fn test_ex1() {
         let ex1 = "seeds: 79 14 55 13
@@ -384,6 +394,7 @@ humidity-to-location map:
 60 56 37
 56 93 4";
 
-        solve(ex1);
+        assert_eq!(35, solve_p1(ex1));
+        assert_eq!(46, solve_p2(ex1));
     }
 }
