@@ -20,7 +20,7 @@ fn solve(input: &str) -> (i64, i64) {
 
 fn solve_p1(input: &str) -> i64 {
     let sections = input.split("\n\n").collect_vec();
-    let seeds = sections[0]
+    let mut seeds = sections[0]
         .split(' ')
         .skip(1)
         .map(|s| s.parse::<i64>().unwrap())
@@ -42,25 +42,24 @@ fn solve_p1(input: &str) -> i64 {
         })
         .collect_vec();
 
-    let mut ans = i64::MAX;
-
-    for mut s in seeds {
-        for step in &steps {
-            for range in step {
-                if let [dst, src, sz] = range[..] {
-                    let src_end = src + sz - 1;
-                    if src <= s && s <= src_end {
-                        s = s - src + dst;
-                        break;
+    *seeds
+        .iter_mut()
+        .map(|s| {
+            for step in &steps {
+                for range in step {
+                    if let [dst, src, sz] = range[..] {
+                        let src_end = src + sz - 1;
+                        if src <= *s && *s <= src_end {
+                            *s = *s - src + dst;
+                            break;
+                        }
+                    } else {
+                        unreachable!()
                     }
-                } else {
-                    unreachable!()
                 }
             }
-        }
-
-        ans = ans.min(s)
-    }
-
-    ans
+            s
+        })
+        .min()
+        .unwrap()
 }
