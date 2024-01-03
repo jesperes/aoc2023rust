@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use itertools::Itertools;
 use rand::Rng;
 use trace::trace;
@@ -15,7 +17,7 @@ impl Solver<i64, i64> for Solution {
 
 type RangeInt = i64;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy)]
 struct SeedRange {
     min: RangeInt,
     max: RangeInt,
@@ -32,7 +34,7 @@ struct RangeMapping {
     len: RangeInt,
 }
 
-#[trace]
+// #[trace]
 fn print_interval(min: RangeInt, max: RangeInt, c: char) {
     assert!(min <= max);
     print!("[{:3}-{:3}] ", min, max);
@@ -48,7 +50,7 @@ fn print_interval(min: RangeInt, max: RangeInt, c: char) {
     println!();
 }
 
-#[trace(disable(new_random))]
+// #[trace(disable(new_random))]
 #[allow(dead_code)]
 impl SeedRange {
     fn new_singleton(n: RangeInt) -> Self {
@@ -90,47 +92,63 @@ impl SeedRange {
         print_interval(self.min, self.max, c);
     }
 
-    fn apply_mapping(&self, mapping: &RangeMapping) -> Vec<SeedRange> {
+    // #[trace]
+    fn apply_mapping(&self, mapping: &RangeMapping) -> Option<Vec<SeedRange>> {
         if self.max < mapping.src_min || self.min > mapping.src_max {
-            println!("[apply-mapping] rule not applicable");
-            vec![self.clone()]
+            println!("[apply-mapping] {:?} rule not applicable", self);
+            None
         } else if self.min < mapping.src_min
             && self.max >= mapping.src_min
             && self.max <= mapping.src_max
         {
-            println!("[apply-mapping] seed range overlaps lower half of mapping range");
+            println!(
+                "[apply-mapping] {:?} seed range overlaps lower half of mapping range",
+                self
+            );
             let lower_part = Self::new_from_min_max(self.min, mapping.src_min - 1);
             let upper_part = Self::new_from_min_max(
                 mapping.dst_min,
                 mapping.dst_min + (self.len - lower_part.len) - 1,
             );
-            vec![lower_part, upper_part]
+            Some(vec![lower_part, upper_part])
         } else if self.min >= mapping.src_min && self.max <= mapping.src_max {
             let offset = self.min - mapping.src_min;
-            println!("[apply-mapping] seed range is enclosed by mapping range");
-            vec![Self::new_from_start_len(mapping.dst_min + offset, self.len)]
+            println!(
+                "[apply-mapping] {:?} seed range is enclosed by mapping range",
+                self
+            );
+            Some(vec![Self::new_from_start_len(
+                mapping.dst_min + offset,
+                self.len,
+            )])
         } else if self.min < mapping.src_min && self.max > mapping.src_max {
-            println!("[apply-mapping] mapping range is enclosed by seed range");
-            vec![
+            println!(
+                "[apply-mapping] {:?} mapping range is enclosed by seed range",
+                self
+            );
+            Some(vec![
                 Self::new_from_min_max(self.min, mapping.src_min - 1),
                 Self::new_from_min_max(mapping.dst_min, mapping.dst_max),
                 Self::new_from_min_max(mapping.src_max + 1, self.max),
-            ]
+            ])
         } else if self.min <= mapping.src_max && self.max > mapping.src_max {
-            println!("[apply-mapping] seed range overlaps upper half of mapping range");
+            println!(
+                "[apply-mapping] {:?} seed range overlaps upper half of mapping range",
+                self
+            );
             // seed range overlaps with upper bound of the mapping range
             let offset = self.min - mapping.src_min;
-            vec![
+            Some(vec![
                 Self::new_from_min_max(mapping.dst_min + offset, mapping.dst_max),
                 Self::new_from_min_max(mapping.src_max + 1, self.max),
-            ]
+            ])
         } else {
             unreachable!()
         }
     }
 }
 
-#[trace(disable(new_random))]
+// #[trace(disable(new_random))]
 impl RangeMapping {
     fn new(src_min: RangeInt, src_max: RangeInt, dst_min: RangeInt, dst_max: RangeInt) -> Self {
         let len = src_max - src_min + 1;
@@ -144,6 +162,7 @@ impl RangeMapping {
         }
     }
 
+    // #[trace]
     fn new_from_line(input: &str) -> Self {
         let (dst, src, len) = input.split(' ').collect_tuple().unwrap();
         let len: RangeInt = len.parse().unwrap();
@@ -154,6 +173,7 @@ impl RangeMapping {
         Self::new(src_min, src_max, dst_min, dst_max)
     }
 
+    #[allow(dead_code)]
     fn new_random<R: Rng>(rng: &mut R) -> Self {
         let src_min = rng.gen_range(0..80);
         let dst_min = rng.gen_range(100..120);
@@ -167,6 +187,7 @@ impl RangeMapping {
         }
     }
 
+    #[allow(dead_code)]
     fn print(&self) {
         println!("Mapping, source range:");
         print_interval(self.src_min, self.src_max, 'V');
@@ -177,9 +198,7 @@ impl RangeMapping {
 
 fn solve(input: &str) -> (i64, i64) {
     let elems = input.split("\n\n").collect_vec();
-    // let maps = &elems[1..];
-
-    let seeds = parse_seeds_p2(elems[0]);
+    let seeds = parse_seeds_p1(elems[0]);
     let maps = parse_maps(&elems[1..]);
 
     apply_maps(&seeds, &maps);
@@ -189,14 +208,48 @@ fn solve(input: &str) -> (i64, i64) {
     (0, 0)
 }
 
-#[allow(dead_code)]
-fn apply_maps(seeds: &Vec<SeedRange>, maps: &Vec<Vec<RangeMapping>>) {
-    for map in maps {
-        for range_mapping in map {
-            for seed_range in seeds {
-                let _mapped_seed_range = seed_range.apply_mapping(range_mapping);
+fn apply_maps(seeds: &[SeedRange], maps: &Vec<Vec<RangeMapping>>) {
+    for seed_range in seeds {
+        println!("\n\n=== Processing seed range");
+        seed_range.print('S');
+
+        // "seeds_in" is the seeds as they are being passed through the mapping
+        // ranges.
+        let mut seeds_in: BTreeSet<SeedRange> = BTreeSet::new();
+        let mut seeds_out: BTreeSet<SeedRange> = BTreeSet::new();
+
+        seeds_in.insert(*seed_range);
+
+        // Filter each seed range through all of the maps. Each map
+        // consists of a number of mapping-ranges.
+        for map in maps {
+            // println!("\n---- Applying map {:?}", map);
+
+            // Apply each mapping range to the seed range.
+            for seed in &seeds_in {
+                let mut is_applicable = false;
+
+                for range_mapping in map {
+                    if let Some(applied_mapping) = seed.apply_mapping(range_mapping) {
+                        for m in applied_mapping {
+                            seeds_out.insert(m);
+                            is_applicable = true;
+                        }
+                    }
+                }
+
+                if !is_applicable {
+                    seeds_out.insert(*seed);
+                }
             }
+
+            // println!("Seed ranges after applying map: {:?}", seeds_out);
+
+            seeds_in.clone_from(&seeds_out);
+            seeds_out.clear();
         }
+
+        println!("{:?}\n->\n{:?}", seed_range, seeds_in);
     }
 }
 
@@ -240,97 +293,97 @@ fn parse_maps(elems: &[&str]) -> Vec<Vec<RangeMapping>> {
 
 mod tests {
 
-    use rand::SeedableRng;
-    use rand_chacha::ChaCha12Rng;
+    // use rand::SeedableRng;
+    // use rand_chacha::ChaCha12Rng;
 
     use super::*;
 
-    #[test]
-    fn test_apply_mapping() {
-        let mapping = RangeMapping::new_from_line("50 98 2");
-        assert_eq!(
-            vec![
-                SeedRange::new_singleton(97),
-                SeedRange::new_from_min_max(50, 51)
-            ],
-            SeedRange::new_from_min_max(97, 99).apply_mapping(&mapping),
-        );
-        assert_eq!(
-            vec![SeedRange::new_from_min_max(50, 51)],
-            SeedRange::new_from_min_max(98, 99).apply_mapping(&mapping),
-        );
-        assert_eq!(
-            vec![
-                SeedRange::new_from_min_max(51, 51),
-                SeedRange::new_from_min_max(100, 101),
-            ],
-            SeedRange::new_from_min_max(99, 101).apply_mapping(&mapping),
-        );
-        assert_eq!(
-            vec![SeedRange::new_from_min_max(101, 102),],
-            SeedRange::new_from_min_max(101, 102).apply_mapping(&mapping),
-        );
-    }
+    // #[test]
+    // fn test_apply_mapping() {
+    //     let mapping = RangeMapping::new_from_line("50 98 2");
+    //     assert_eq!(
+    //         vec![
+    //             SeedRange::new_singleton(97),
+    //             SeedRange::new_from_min_max(50, 51)
+    //         ],
+    //         SeedRange::new_from_min_max(97, 99).apply_mapping(&mapping),
+    //     );
+    //     assert_eq!(
+    //         vec![SeedRange::new_from_min_max(50, 51)],
+    //         SeedRange::new_from_min_max(98, 99).apply_mapping(&mapping),
+    //     );
+    //     assert_eq!(
+    //         vec![
+    //             SeedRange::new_from_min_max(51, 51),
+    //             SeedRange::new_from_min_max(100, 101),
+    //         ],
+    //         SeedRange::new_from_min_max(99, 101).apply_mapping(&mapping),
+    //     );
+    //     assert_eq!(
+    //         vec![SeedRange::new_from_min_max(101, 102),],
+    //         SeedRange::new_from_min_max(101, 102).apply_mapping(&mapping),
+    //     );
+    // }
 
-    #[test]
-    fn test_random_ranges() {
-        let mut rng = ChaCha12Rng::seed_from_u64(4711);
-        for i in 0..100 {
-            println!("\n<<< TEST CASE {i} >>>");
-            let seed_range = SeedRange::new_random(&mut rng);
-            seed_range.print('S');
-            let mapping = RangeMapping::new_random(&mut rng);
-            mapping.print();
+    // #[test]
+    // fn test_random_ranges() {
+    //     let mut rng = ChaCha12Rng::seed_from_u64(4711);
+    //     for i in 0..100 {
+    //         println!("\n<<< TEST CASE {i} >>>");
+    //         let seed_range = SeedRange::new_random(&mut rng);
+    //         seed_range.print('S');
+    //         let mapping = RangeMapping::new_random(&mut rng);
+    //         mapping.print();
 
-            println!("Seed ranges mapped into:");
-            let mapped_range = seed_range.apply_mapping(&mapping);
-            for m in &mapped_range {
-                m.print('S');
-            }
-            assert_eq!(
-                seed_range.len,
-                mapped_range.iter().map(|range| range.len).sum()
-            );
-        }
-    }
+    //         println!("Seed ranges mapped into:");
+    //         let mapped_range = seed_range.apply_mapping(&mapping);
+    //         for m in &mapped_range {
+    //             m.print('S');
+    //         }
+    //         assert_eq!(
+    //             seed_range.len,
+    //             mapped_range.iter().map(|range| range.len).sum()
+    //         );
+    //     }
+    // }
 
     #[allow(dead_code)]
     #[test]
     fn test_ex1() {
-        let _ex1 = "seeds: 79 14 55 13
+        let ex1 = "seeds: 79 14 55 13
 
-        seed-to-soil map:
-        50 98 2
-        52 50 48
+seed-to-soil map:
+50 98 2
+52 50 48
 
-        soil-to-fertilizer map:
-        0 15 37
-        37 52 2
-        39 0 15
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
 
-        fertilizer-to-water map:
-        49 53 8
-        0 11 42
-        42 0 7
-        57 7 4
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
 
-        water-to-light map:
-        88 18 7
-        18 25 70
+water-to-light map:
+88 18 7
+18 25 70
 
-        light-to-temperature map:
-        45 77 23
-        81 45 19
-        68 64 13
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
 
-        temperature-to-humidity map:
-        0 69 1
-        1 0 69
+temperature-to-humidity map:
+0 69 1
+1 0 69
 
-        humidity-to-location map:
-        60 56 37
-        56 93 4";
+humidity-to-location map:
+60 56 37
+56 93 4";
 
-        // solve(ex1);
+        solve(ex1);
     }
 }

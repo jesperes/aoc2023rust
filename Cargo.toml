@@ -12,6 +12,7 @@ clap = { version = "4.4.11", features = ["derive"] }
 comfy-table = "7.1.0"
 derivative = "2.2.0"
 dirs = "5.0.1"
+dubble = "0.1.0"
 grid = "0.12.0"
 hashbrown = { version = "0.14.3", features = ["rayon"] }
 indicatif = { version = "0.17.7", features = ["rayon"] }
