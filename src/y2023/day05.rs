@@ -30,7 +30,7 @@ struct RangeMapping {
     src_max: RangeInt,
     dst_min: RangeInt,
     dst_max: RangeInt,
-    len: RangeInt,
+    //   len: RangeInt,
 }
 
 // #[trace]
@@ -59,7 +59,8 @@ impl SeedRange {
         }
     }
 
-    fn new_from_min_max(min: RangeInt, max: RangeInt) -> Self {
+    fn new(min: RangeInt, max: RangeInt) -> Self {
+        assert!(min <= max);
         Self {
             min,
             max,
@@ -67,12 +68,10 @@ impl SeedRange {
         }
     }
 
-    fn new_from_start_len(start: RangeInt, len: RangeInt) -> Self {
-        Self {
-            min: start,
-            max: start + len - 1,
-            len,
-        }
+    fn check(&self) {
+        assert!(self.min > 0);
+        assert!(self.min <= self.max);
+        assert!(self.max - self.min + 1 == self.len);
     }
 
     fn new_random<R: Rng>(rng: &mut R) -> Self {
@@ -90,7 +89,7 @@ impl SeedRange {
         print_interval(self.min, self.max, c);
     }
 
-    // #[trace]
+    //#[trace]
     fn apply_mapping(&self, mapping: &RangeMapping) -> Option<Vec<SeedRange>> {
         if self.max < mapping.src_min || self.min > mapping.src_max {
             // println!("[apply-mapping] {:?} rule not applicable", self);
@@ -99,46 +98,65 @@ impl SeedRange {
             && self.max >= mapping.src_min
             && self.max <= mapping.src_max
         {
+            // mapping-src:          #######
+            // seed range:       #########
+            // mapping-dest:                      v
+            // result:           ####             #####
             // println!(
             //     "[apply-mapping] {:?} seed range overlaps lower half of mapping range",
             //     self
             // );
-            let lower_part = Self::new_from_min_max(self.min, mapping.src_min - 1);
-            let upper_part = Self::new_from_min_max(
+            let lower_part = Self::new(self.min, mapping.src_min - 1);
+            let upper_part = Self::new(
                 mapping.dst_min,
                 mapping.dst_min + (self.len - lower_part.len) - 1,
             );
             Some(vec![lower_part, upper_part])
         } else if self.min >= mapping.src_min && self.max <= mapping.src_max {
+            // mapping-src:      ###########
+            // seed range:       .########..
+            // mapping-dest:                      v
+            // result:                            .########
+
             let offset = self.min - mapping.src_min;
+            assert!(offset >= 0);
             // println!(
             //     "[apply-mapping] {:?} seed range is enclosed by mapping range",
             //     self
             // );
-            Some(vec![Self::new_from_start_len(
+            Some(vec![Self::new(
                 mapping.dst_min + offset,
-                self.len,
+                mapping.dst_min + offset + self.len - 1,
             )])
         } else if self.min < mapping.src_min && self.max > mapping.src_max {
+            // mapping-src:         ####
+            // seed range:        ########
+            // mapping-dest:                      v
+            // result:            ##    ##        ####
             // println!(
             //     "[apply-mapping] {:?} mapping range is enclosed by seed range",
             //     self
             // );
             Some(vec![
-                Self::new_from_min_max(self.min, mapping.src_min - 1),
-                Self::new_from_min_max(mapping.dst_min, mapping.dst_max),
-                Self::new_from_min_max(mapping.src_max + 1, self.max),
+                Self::new(self.min, mapping.src_min - 1),
+                Self::new(mapping.dst_min, mapping.dst_max),
+                Self::new(mapping.src_max + 1, self.max),
             ])
         } else if self.min <= mapping.src_max && self.max > mapping.src_max {
+            // mapping-src:       ########
+            // seed range:        ....########
+            // mapping-dest:                      v
+            // result:                    ####    ....####
             // println!(
             //     "[apply-mapping] {:?} seed range overlaps upper half of mapping range",
             //     self
             // );
             // seed range overlaps with upper bound of the mapping range
             let offset = self.min - mapping.src_min;
+            assert!(offset >= 0);
             Some(vec![
-                Self::new_from_min_max(mapping.dst_min + offset, mapping.dst_max),
-                Self::new_from_min_max(mapping.src_max + 1, self.max),
+                Self::new(mapping.src_max + 1, self.max),
+                Self::new(mapping.dst_min + offset, mapping.dst_max),
             ])
         } else {
             unreachable!()
@@ -149,14 +167,12 @@ impl SeedRange {
 // #[trace(disable(new_random))]
 impl RangeMapping {
     fn new(src_min: RangeInt, src_max: RangeInt, dst_min: RangeInt, dst_max: RangeInt) -> Self {
-        let len = src_max - src_min + 1;
         assert_eq!(src_max - src_min, dst_max - dst_min);
         Self {
             src_min,
             src_max,
             dst_min,
             dst_max,
-            len,
         }
     }
 
@@ -180,7 +196,6 @@ impl RangeMapping {
             src_max: src_min + len - 1,
             dst_min,
             dst_max: dst_min + len - 1,
-            len,
         }
     }
 
@@ -231,7 +246,7 @@ fn apply_maps(seeds: &[SeedRange], maps: &Vec<Vec<RangeMapping>>) -> i64 {
         // Filter each seed range through all of the maps. Each map
         // consists of a number of mapping-ranges.
         for map in maps {
-            // println!("\n---- Applying map {:?}", map);
+            // println!("\n---- Applying map {:?}", map[0]);
 
             // Apply each mapping range to the seed range.
             for seed in &seeds_in {
@@ -239,10 +254,14 @@ fn apply_maps(seeds: &[SeedRange], maps: &Vec<Vec<RangeMapping>>) -> i64 {
 
                 for range_mapping in map {
                     if let Some(applied_mapping) = seed.apply_mapping(range_mapping) {
-                        for m in applied_mapping {
-                            seeds_out.insert(m);
+                        for m in &applied_mapping {
+                            m.check();
+                            seeds_out.insert(*m);
                             is_applicable = true;
                         }
+
+                        assert_eq!(applied_mapping.iter().map(|m| m.len).sum::<i64>(), seed.len);
+                        break;
                     }
                 }
 
@@ -282,7 +301,7 @@ fn parse_seeds_p2(input: &str) -> Vec<SeedRange> {
         .into_iter()
         .map(|chunk| {
             let (start, len) = chunk.collect_tuple().unwrap();
-            SeedRange::new_from_start_len(start, len)
+            SeedRange::new(start, start + len - 1)
         })
         .collect()
 }
