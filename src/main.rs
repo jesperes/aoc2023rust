@@ -1,6 +1,4 @@
 #![feature(int_roundings)]
-use chrono::{Local, TimeZone};
-use chrono_tz::US::Eastern;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar};
 use itertools::FoldWhile::{Continue, Done};
@@ -169,9 +167,8 @@ fn get_puzzles(args: &Cli) -> Vec<PuzzleInfo> {
 fn get_puzzles_for_year(year: Year, args: &Cli) -> Vec<PuzzleInfo> {
     args.days
         .clone()
-        .unwrap_or_else(|| (0..=25).collect_vec())
+        .unwrap_or_else(|| (1..=25).collect_vec())
         .iter()
-        .filter(|&d| is_released(year, *d))
         .map(|&d| PuzzleInfo {
             year,
             day: d,
@@ -179,14 +176,6 @@ fn get_puzzles_for_year(year: Year, args: &Cli) -> Vec<PuzzleInfo> {
             expected: aoc_fetcher::maybe_fetch_puzzle_solutions(year, d),
         })
         .collect()
-}
-
-// Return true if the given puzzle has been released
-fn is_released(year: Year, day: Day) -> bool {
-    Local::now()
-        > Eastern
-            .with_ymd_and_hms(year as i32, 12, day, 0, 0, 0)
-            .unwrap()
 }
 
 fn run_one_puzzle_with_progress(
@@ -216,9 +205,9 @@ fn run_one_puzzle_with_progress(
         (2023, 19) => Some(run_with_types(pi, args, pb, &y2023::day19::Solution)),
         (2023, 20) => Some(run_with_types(pi, args, pb, &y2023::day20::Solution)),
         (2023, 21) => Some(run_with_types(pi, args, pb, &y2023::day21::Solution)),
-        (2023, 22) => Some(run_with_types(pi, args, pb, &y2023::day22::Solution)),
-        (2023, 23) => Some(run_with_types(pi, args, pb, &y2023::day23::Solution)),
-        (2023, 24) => Some(run_with_types(pi, args, pb, &y2023::day24::Solution)),
+        // (2023, 22) => Some(run_with_types(pi, args, pb, &y2023::day22::Solution)),
+        // (2023, 23) => Some(run_with_types(pi, args, pb, &y2023::day23::Solution)),
+        // (2023, 24) => Some(run_with_types(pi, args, pb, &y2023::day24::Solution)),
         (2023, 25) => Some(run_with_types(pi, args, pb, &y2023::day25::Solution)),
         _ => None,
     }
