@@ -167,26 +167,18 @@ fn get_puzzles(args: &Cli) -> Vec<PuzzleInfo> {
 }
 
 fn get_puzzles_for_year(year: Year, args: &Cli) -> Vec<PuzzleInfo> {
-    if let Some(days) = &args.days {
-        days.iter()
-            .map(|d| PuzzleInfo {
-                year,
-                day: *d,
-                input: aoc_fetcher::maybe_fetch_puzzle_data(year, *d),
-                expected: aoc_fetcher::maybe_fetch_puzzle_solutions(year, *d),
-            })
-            .collect()
-    } else {
-        (1..=25)
-            .filter(|d| is_released(year, *d))
-            .map(|d| PuzzleInfo {
-                year,
-                day: d,
-                input: aoc_fetcher::maybe_fetch_puzzle_data(year, d),
-                expected: aoc_fetcher::maybe_fetch_puzzle_solutions(year, d),
-            })
-            .collect()
-    }
+    args.days
+        .clone()
+        .unwrap_or_else(|| (0..=25).collect_vec())
+        .iter()
+        .filter(|&d| is_released(year, *d))
+        .map(|&d| PuzzleInfo {
+            year,
+            day: d,
+            input: aoc_fetcher::maybe_fetch_puzzle_data(year, d),
+            expected: aoc_fetcher::maybe_fetch_puzzle_solutions(year, d),
+        })
+        .collect()
 }
 
 // Return true if the given puzzle has been released

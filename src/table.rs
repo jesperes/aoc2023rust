@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use comfy_table::{presets::*, Attribute, Cell, CellAlignment, Color, Table};
 
 use crate::{Cli, PuzzleRun, SolverResult};
@@ -10,9 +12,14 @@ fn hdr_cell(text: &str) -> Cell {
 
 pub fn make_table(runs: &mut Vec<PuzzleRun>, args: &Cli) -> comfy_table::Table {
     let mut table = Table::new();
-    let total_time = runs.iter().map(|run| run.result.time).max().unwrap();
+    let total_time = runs
+        .iter()
+        .map(|run| run.result.time)
+        .max()
+        .unwrap_or(Duration::ZERO);
 
     table.load_preset(UTF8_FULL_CONDENSED).set_header(vec![
+        hdr_cell("Year"),
         hdr_cell("Day"),
         hdr_cell("Time in \u{b5}s"),
         hdr_cell("Iterations"),
@@ -26,6 +33,7 @@ pub fn make_table(runs: &mut Vec<PuzzleRun>, args: &Cli) -> comfy_table::Table {
 
     for run in runs {
         table.add_row(vec![
+            Cell::new(run.info.year),
             Cell::new(run.info.day),
             Cell::new(format!("{:?}", run.result.time.as_micros()))
                 .set_alignment(CellAlignment::Right)
